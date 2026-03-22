@@ -1,0 +1,10 @@
+node_modules
+# Keep environment variables out of version control
+.env
+
+# Ignore Prisma Client generated files
+/generated/prisma
+
+# Ignore key files
+keys/
+*.pem

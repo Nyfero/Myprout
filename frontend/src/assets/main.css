@@ -1,0 +1,153 @@
+html, body {
+  overflow: hidden;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+#app {
+  height: 100%;
+}
+
+* {
+  scrollbar-width: none; /* Firefox */
+}
+
+*::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge */
+}
+
+/* Main theme */
+
+.themed-card {
+  background: rgba(10, 10, 10, 0.05);
+  border: 2px solid #fff;
+  border-radius: 22px;
+  backdrop-filter: blur(1px);
+  -webkit-backdrop-filter: blur(7px);
+  color: #fff;
+}
+
+.themed-h1 {
+  font-size: 2rem;
+  margin-bottom: 20px;
+  padding: 0;
+  font-weight: 800;
+  color:#fff;
+  text-shadow: 0px 0px 3px #c25fff;
+  font-family: 'Poppins', sans-serif;
+}
+
+.themed-h2 {
+  font-size: 1.5rem;
+  margin-bottom: 20px;
+  padding: 0;
+  font-weight: 600;
+  color:#fff;
+  text-shadow: 0px 0px 3px #c25fff;
+  font-family: 'Poppins', sans-serif;
+}
+
+.themed-input {
+  margin: 8px 0;
+  padding: 10px;
+  width: 95%;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  background: rgba(28, 28, 32, 1);
+  color: #fff;
+  outline: none;
+  font-size: 1rem;
+}
+.themed-textarea:focus,
+.themed-input:focus {
+  border: 1px solid #c25fff;
+  transition: 0.5s;
+}
+
+.themed-textarea {
+  margin: 8px 0;
+  padding: 0.6rem 0.9rem;
+  width: 95%;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  background: rgba(28, 28, 32, 1);
+  color: #fff;
+  outline: none;
+  font-size: 0.95rem;
+  resize: none;
+}
+
+.themed-button {
+  width: 100%;
+  border-radius: 12px;
+  border: none;
+  padding: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.button-primary {
+  background: linear-gradient(90deg,#c25fff,#8342cf);
+  color: #fff;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+.button-primary:hover {
+  filter: brightness(1.3);
+  transition: 1s;
+}
+
+.button-secondary {
+  background: none;
+  color: grey;
+  font-size: 1rem;
+}
+.button-secondary:hover {
+  transition: 1s;
+  background-color: rgba(28, 28, 32, 1);
+}
+
+.themed-label {
+  font-size: 1rem;
+  padding: 0;
+  font-weight: 300;
+  color:#fff;
+  text-shadow: 0px 0px 3px #c25fff;
+  font-family: 'Poppins', sans-serif;
+}
+
+.input-password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-password-wrapper input {
+  width: 100%;
+  padding-right: 2.5rem;
+}
+
+.password-actions {
+  position: absolute;
+  right: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.toggle-password {
+  background: transparent;
+  border: none;
+  color: #aaa;
+  cursor: pointer;
+  display: flex;
+  margin-top: 0;
+}
+.toggle-password:hover { color: #c25fff; }
+
+.form-error {
+  color: #ff5555;
+  font-size: 0.9rem;
+  text-align: center;
+}

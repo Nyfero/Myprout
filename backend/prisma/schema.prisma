@@ -1,0 +1,73 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model users {
+  user_id               Int       @id @default(autoincrement())
+  ip                    ipAddress[]
+  passwords             passwords[]
+  userRoles             userRoles[]
+  firstName             String    @default("")
+  lastName              String    @default("")
+  email                 String    @unique
+  password_hash         String?   
+  is_active             Boolean   @default(false)
+  token_hash            String?   @unique @db.VarChar(64)
+  crypto_salt           String?   @unique @db.VarChar(64)
+  created_at            DateTime  @default(now())
+  updated_at            DateTime? @updatedAt
+}
+
+model ipAddress {
+  ip_id           Int       @id @default(autoincrement())
+  user_id         Int
+  user            users     @relation(fields: [user_id], references: [user_id])
+  ip              String
+  created_at      DateTime  @default(now())
+  last_time_used  DateTime  @default(now())
+  type            String?    // Adresse ip de travail ou de domicile ?
+  country         String?    // Bloquer les ip d'autres pays ?
+  is_active       Boolean   @default(false)
+}
+
+model passwords {
+  password_id     Int       @id @default(autoincrement())
+  user_id         Int
+  user            users     @relation(fields: [user_id], references: [user_id])
+  title           String?
+  username        String?
+  password        String?
+  email           String?
+  note            String?   @db.Text
+  is_compromised  Boolean   @default(false)
+  is_stared       Boolean   @default(false)
+  is_deleted      Boolean   @default(false)
+  deleted_time    DateTime?
+}
+
+model roles {
+  role_id   Int     @id @default(autoincrement())
+  role      String
+  userRoles   userRoles[]
+}
+
+model userRoles {
+  user_id   Int
+  role_id   Int
+  user      users  @relation(fields: [user_id], references: [user_id])
+  role      roles  @relation(fields: [role_id], references: [role_id])
+
+  @@id([user_id, role_id])
+}
