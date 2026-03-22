@@ -1,0 +1,31 @@
+# Environment variables declared in this file are automatically made available to Prisma.
+# See the documentation for more detail: https://pris.ly/d/prisma-schema#accessing-environment-variables-from-the-schema
+
+# Prisma supports the native connection string format for PostgreSQL, MySQL, SQLite, SQL Server, MongoDB and CockroachDB.
+# See the documentation for all the connection string options: https://pris.ly/d/connection-strings
+
+# The following `prisma+postgres` URL is similar to the URL produced by running a local Prisma Postgres 
+# server with the `prisma dev` CLI command, when not choosing any non-default ports or settings. The API key, unlike the 
+# one found in a remote Prisma Postgres URL, does not contain any sensitive information.
+
+#Prisma
+DATABASE_URL="mysql://john:password@localhost:3306/myprout"
+ADMIN_EMAIL=john.doe@mail.com
+ADMIN_PASSWORD='password'
+ADMIN_FIRSTNAME=John
+ADMIN_LASTNAME=Doe
+
+# Backend
+JWT_PRIVATE_KEY_PATH=./keys/private_key.pem
+JWT_PUBLIC_KEY_PATH=./keys/public_key.pem
+FRONTEND_URL=http://localhost:5173
+# EMAIL_USER=votre_email@gmail.com
+# EMAIL_PASSWORD=votre_mot_de_passe_app  # Utilisez un "App Password" pour Gmail
+MAILTRAP_USER=mailtrap_user
+MAILTRAP_PASSWORD=mailtrap_password
+
+LOGO_DEV_TOKEN=logo_dev_token
+
+
+# Frontend
+VITE_API_BASE_URL=http://localhost:3000
