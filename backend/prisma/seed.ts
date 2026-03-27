@@ -1,5 +1,4 @@
 import { PrismaClient } from '@prisma/client';
-import { hashPassword } from '../src/utils/hash.ts';
 
 const prisma = new PrismaClient();
 
@@ -9,7 +8,7 @@ async function main() {
   const email = process.env.ADMIN_EMAIL!;
   const firstName = process.env.ADMIN_FIRSTNAME!;
   const lastName = process.env.ADMIN_LASTNAME!;
-  const password_hash = await hashPassword(process.env.ADMIN_PASSWORD!);
+  const password_hash = await bcrypt.hash(process.env.ADMIN_PASSWORD!, 12);
 
   // 1. Créer ou récupérer le rôle ADMIN
   const adminRole = await prisma.roles.upsert({

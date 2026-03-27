@@ -22,7 +22,7 @@ model users {
   firstName             String    @default("")
   lastName              String    @default("")
   email                 String    @unique
-  password_hash         String?   
+  password_hash         String?
   is_active             Boolean   @default(false)
   token_hash            String?   @unique @db.VarChar(64)
   crypto_salt           String?   @unique @db.VarChar(64)

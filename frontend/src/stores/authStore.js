@@ -19,10 +19,7 @@ export const useAuthStore = defineStore('auth', {
   },
   actions: {
     async unlockKey(password) {
-      const response = await api.post('/auth/verify-password', {
-        email: this.user.email,
-        password
-      });
+      const response = await api.post('/auth/password/verify', { password });
       const key = await deriveKey(password, this.crypto_salt);
       this.crypto_key = key;
     },
@@ -46,7 +43,6 @@ export const useAuthStore = defineStore('auth', {
       localStorage.removeItem('token')
       localStorage.removeItem('user')
       localStorage.removeItem('crypto_salt') 
-
     },
     // Pour restaurer la session au rechargement de la page
     initFromStorage() {

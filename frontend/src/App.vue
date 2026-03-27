@@ -1,16 +1,26 @@
 <script setup>
-  import { useRoute } from 'vue-router';
-  import { ref, watchEffect, computed } from "vue";
-  import DustParticles from './components/DustParticles.vue'
-  import Navbar from "@/components/ui/Navbar.vue"
+import { useRoute } from 'vue-router'
+import { ref, watchEffect, computed, onMounted, onUnmounted } from 'vue'
+import { useInactivity } from '@/composables/useInactivity'
+import { useAuthStore } from '@/stores/authStore'
+import DustParticles from './components/background/DustParticles.vue'
+import Navbar from '@/components/ui/Navbar.vue'
 
-  const route = useRoute();
-  const currentPage = ref(route.path);
-  const showNavbar = computed(() => route.name !== "Login")
+const route = useRoute()
+const currentPage = ref(route.path)
+const showNavbar = computed(() => route.name !== 'Login')
+const authStore = useAuthStore()
+const { start, stop } = useInactivity()
 
-  watchEffect(() => {
-    currentPage.value = route.path;
-  });
+watchEffect(() => {
+  currentPage.value = route.path
+})
+
+onMounted(() => {
+  if (authStore.isAuthenticated) start()
+})
+
+onUnmounted(() => stop())
 </script>
 
 <template>

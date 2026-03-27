@@ -11,17 +11,17 @@ import AdminView from '@/views/AdminView.vue';
 import { useAuthStore } from '@/stores/authStore';
 
 const routes = [
-  { path: '/', name: 'Home', component: HomeView },
+  // { path: '/', name: 'Home', component: HomeView },
   { path: '/login', name: 'Login', component: LoginView },
-  { path: '/password', name: 'Password', component: PasswordsView, meta: { requireAuth: true } },
-  { path: '/admin', name: 'Admin', component: AdminView, meta: { requireAuth: true, requiresAdmin: true } },
-  { path: '/unlock', name: 'Unlock', component : UnlockView, meta: { requireAuth: true } },
+  { path: '/password', name: 'Password', component: PasswordsView, meta: { requiresAuth: true } },
+  { path: '/unlock', name: 'Unlock', component : UnlockView, meta: { requiresAuth: true } },
+  { path: '/profile', name: 'Profile', component: ProfileView, meta: { requiresAuth: true } },
+  { path: '/admin', name: 'Admin', component: AdminView, meta: { requiresAuth: true, requiresAdmin: true } },
   // { path: '/files', name: 'Files', component: FilesView },
   // { path: '/games', name: 'Games', component: GamesView },
-  { path: '/profile', name: 'Profile', component: ProfileView },
   // { path: '/movies', name: 'Movies', component: MoviesView },
   // catch-all pour tout le reste
-  { path: '/:pathMatch(.*)*', redirect: '/password' },
+  { path: '/:pathMatch(.*)*', redirect: '/login' },
 ]
 
 const router = createRouter({
@@ -33,7 +33,7 @@ router.beforeEach((to, from, next) => {
   const authStore = useAuthStore();
   const isAuthenticated = authStore.isAuthenticated;
 
-  if (to.name === '*' && !isAuthenticated) {
+  if (to.meta.requiresAuth && !isAuthenticated) {
     next({ name: 'Login' });
   } else if (to.name === 'Login' && isAuthenticated) {
     next({ name: 'Password' });

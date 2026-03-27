@@ -65,7 +65,7 @@ import { usePasswords } from './composables/usePasswords'
 import { useAuthStore } from '@/stores/authStore'
 import { decryptPassword } from '@/utils/crypto'
 import PasswordsCard from './PasswordsCard.vue'
-import PasswordsModal from './PasswordsModal.vue'
+import PasswordsModal from '../modals/passwords/PasswordsModal.vue'
 import PasswordsAlphabet from './PasswordsAlphabet.vue'
 import Toast from '../ui/Toast.vue'
 

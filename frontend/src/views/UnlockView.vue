@@ -2,15 +2,15 @@
   <div class="unlock-container">
     <div class="themed-card unlock-card">
       <h2 class="themed-h2">Déverrouiller votre coffre</h2>
-      <div class="input-password-wrapper">
+      <div class="form-wrapper">
         <input 
           class="themed-input" 
           v-model="password" 
           :type="showPassword ? 'text' : 'password'" 
           @keyup.enter="unlock"
         />
-        <div class="password-actions">
-          <button class="toggle-password" @click="showPassword = !showPassword">
+        <div class="input-actions">
+          <button class="toggle-password" @click="showPassword = !showPassword" tabindex="-1">
             <span class="material-icons">{{ showPassword ? 'visibility_off' : 'visibility' }}</span>
           </button>
         </div>

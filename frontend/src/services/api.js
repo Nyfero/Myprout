@@ -1,22 +1,21 @@
 // src/services/api.js
-import axios from "axios";
-import { ref } from "vue";
+import axios from 'axios'
+import { ref } from 'vue'
 
 const api = axios.create({
   baseURL: 'http://localhost:3000/api',
   // baseURL: 'https://votre-backend.com/api', // Pour la prod
-});
+})
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token')
-  console.log('Token envoyé :', token) // 👈 Ajoutez ce log temporairement
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
   return config
 })
 
-export default api;
+export default api
 
 // Configuration de base d'Axios
 // const api = axios.create({

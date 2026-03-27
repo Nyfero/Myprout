@@ -1,21 +1,9 @@
 <template>
   <div class="login-container">
     <Transition :name="transitionName" mode="out-in">
-      <SetPassword
-        v-if="showSetPassword"
-        key="setPassword"
-        @switch="goLogin"
-      />
-      <Login
-        v-else-if="!showRegister"
-        key="login"
-        @switch="goRegister"
-      />
-      <Register
-        v-else
-        key="register"
-        @switch="goLogin"
-      />
+      <SetPassword v-if="showSetPassword" key="setPassword" @switch="goLogin" />
+      <Login v-else-if="!showRegister" key="login" @switch="goRegister" />
+      <Register v-else key="register" @switch="goLogin" />
     </Transition>
     <span class="version">1.0.0</span>
   </div>
@@ -24,7 +12,10 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { setDustDirection, resetDustBoost } from "@/composables/useDustDirection"
+import {
+  setDustDirection,
+  resetDustBoost,
+} from '@/components/background/composables/useDustDirection'
 import Login from '@/components/login/Login.vue'
 import Register from '@/components/login/Register.vue'
 import SetPassword from '@/components/login/SetPassword.vue'
@@ -89,14 +80,15 @@ async function goLogin() {
 /* Slide vers la gauche (connexion -> inscription) */
 .slide-left-enter-active,
 .slide-left-leave-active {
-  transition: all .6s cubic-bezier(.6, .01, .39, .97);
+  transition: all 0.6s cubic-bezier(0.6, 0.01, 0.39, 0.97);
   position: absolute;
 }
 .slide-left-enter-from {
   opacity: 0;
   transform: translateX(120vw);
 }
-.slide-left-enter-to, .slide-left-leave-from {
+.slide-left-enter-to,
+.slide-left-leave-from {
   opacity: 1;
   transform: translateX(0);
 }
@@ -108,14 +100,15 @@ async function goLogin() {
 /* Slide vers la droite (inscription -> connexion) */
 .slide-right-enter-active,
 .slide-right-leave-active {
-  transition: all .6s cubic-bezier(.6, .01, .39, .97);
+  transition: all 0.6s cubic-bezier(0.6, 0.01, 0.39, 0.97);
   position: absolute;
 }
 .slide-right-enter-from {
   opacity: 0;
   transform: translateX(-120vw);
 }
-.slide-right-enter-to, .slide-right-leave-from {
+.slide-right-enter-to,
+.slide-right-leave-from {
   opacity: 1;
   transform: translateX(0);
 }

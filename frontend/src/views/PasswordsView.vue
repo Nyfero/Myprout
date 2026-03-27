@@ -5,7 +5,7 @@
   </div>
 
   <div v-else class="themed-card passwords-page">
-      <PasswordsList />
+    <PasswordsList />
   </div>
 </template>
 

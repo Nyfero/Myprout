@@ -1,9 +1,9 @@
 // src/utils/crypto.js
 
 const hexToBytes = (hex) =>
-  Uint8Array.from(hex.match(/.{1,2}/g).map(b => parseInt(b, 16)))
+  Uint8Array.from(hex.match(/.{1,2}/g).map((b) => parseInt(b, 16)))
 
-// Dériver une clé AES depuis le mot de passe + salt
+// Dériver une clé AES avec le salt
 export const deriveKey = async (password, saltHex) => {
   const encoder = new TextEncoder()
 
@@ -19,8 +19,8 @@ export const deriveKey = async (password, saltHex) => {
     {
       name: 'PBKDF2',
       salt: hexToBytes(saltHex),
-      iterations: 310000, // recommandé OWASP 2023
-      hash: 'SHA-256'
+      iterations: 310000,
+      hash: 'SHA-256',
     },
     baseKey,
     { name: 'AES-GCM', length: 256 },
@@ -49,7 +49,9 @@ export const encryptPassword = async (text, cryptoKey) => {
 
 // Déchiffrer
 export const decryptPassword = async (encryptedBase64, cryptoKey) => {
-  const combined = Uint8Array.from(atob(encryptedBase64), c => c.charCodeAt(0))
+  const combined = Uint8Array.from(atob(encryptedBase64), (c) =>
+    c.charCodeAt(0)
+  )
   const iv = combined.slice(0, 12)
   const data = combined.slice(12)
 
