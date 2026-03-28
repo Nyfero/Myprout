@@ -3,8 +3,13 @@
 const hexToBytes = (hex) =>
   Uint8Array.from(hex.match(/.{1,2}/g).map((b) => parseInt(b, 16)))
 
-// Dériver une clé AES avec le salt
-export const deriveKey = async (password, saltHex) => {
+const bytesToHex = (bytes) =>
+  Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
+
+// Dériver la KEK depuis le mot de passe + salt
+export const deriveKek = async (password, saltHex) => {
   const encoder = new TextEncoder()
 
   const baseKey = await crypto.subtle.importKey(
@@ -29,7 +34,37 @@ export const deriveKey = async (password, saltHex) => {
   )
 }
 
-// Chiffrer
+// Déchiffrer la crypto_key avec la KEK
+export const decryptCryptoKey = async (encryptedPayload, kek) => {
+  const [ivHex, tagHex, encryptedHex] = encryptedPayload.split(':')
+
+  const iv = hexToBytes(ivHex)
+  const tag = hexToBytes(tagHex)
+  const encrypted = hexToBytes(encryptedHex)
+
+  const encryptedWithTag = new Uint8Array(encrypted.byteLength + tag.byteLength)
+  encryptedWithTag.set(encrypted, 0)
+  encryptedWithTag.set(tag, encrypted.byteLength)
+
+  const decrypted = await crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv },
+    kek,
+    encryptedWithTag
+  )
+
+  return bytesToHex(new Uint8Array(decrypted))
+}
+
+// Importer la crypto_key (hex) en objet CryptoKey WebCrypto
+export const importCryptoKey = async (cryptoKeyHex) => {
+  const keyBytes = hexToBytes(cryptoKeyHex)
+  return crypto.subtle.importKey('raw', keyBytes, { name: 'AES-GCM' }, false, [
+    'encrypt',
+    'decrypt',
+  ])
+}
+
+// Chiffrer un mot de passe avec la crypto_key
 export const encryptPassword = async (text, cryptoKey) => {
   const iv = crypto.getRandomValues(new Uint8Array(12))
   const encoded = new TextEncoder().encode(text)
@@ -47,7 +82,7 @@ export const encryptPassword = async (text, cryptoKey) => {
   return btoa(String.fromCharCode(...combined))
 }
 
-// Déchiffrer
+// Déchiffrer un mot de passe avec la crypto_key
 export const decryptPassword = async (encryptedBase64, cryptoKey) => {
   const combined = Uint8Array.from(atob(encryptedBase64), (c) =>
     c.charCodeAt(0)
@@ -62,4 +97,13 @@ export const decryptPassword = async (encryptedBase64, cryptoKey) => {
   )
 
   return new TextDecoder().decode(decrypted)
+}
+export const unlockCryptoKey = async (
+  password,
+  kek_salt,
+  encrypted_crypto_key
+) => {
+  const kek = await deriveKek(password, kek_salt)
+  const cryptoKeyHex = await decryptCryptoKey(encrypted_crypto_key, kek)
+  return importCryptoKey(cryptoKeyHex)
 }

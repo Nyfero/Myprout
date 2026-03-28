@@ -1,15 +1,18 @@
 <template>
   <BaseModal @close="$emit('close')">
-
     <!-- Header -->
     <template #header>
       <div class="modal-header-empty" />
 
       <div class="modal-header-title">
         <h2 class="themed-h2">
-          {{ modalMode === 'create' ? 'Nouveau mot de passe'
-          : modalMode === 'edit' ? 'Modifier'
-          : localForm.title }}
+          {{
+            modalMode === 'create'
+              ? 'Nouveau mot de passe'
+              : modalMode === 'edit'
+                ? 'Modifier'
+                : localForm.title
+          }}
         </h2>
       </div>
 
@@ -22,7 +25,6 @@
 
     <!-- Body -->
     <div class="modal-form">
-
       <!-- Titre -->
       <div class="form-group">
         <label class="themed-label">Titre</label>
@@ -42,16 +44,22 @@
         <label class="themed-label">Nom d'utilisateur</label>
         <div class="form-wrapper">
           <input
-          v-if="modalMode !== 'view'"
-          class="themed-input"
-          v-model="localForm.username"
-          type="text"
-          placeholder="email@exemple.com"
+            v-if="modalMode !== 'view'"
+            class="themed-input"
+            v-model="localForm.username"
+            type="text"
+            placeholder="email@exemple.com"
           />
           <span v-else class="form-value">{{ localForm.username || '—' }}</span>
           <div class="input-actions">
-            <button class="copy-btn" @click="copyToClipboard(localForm.username, 'username')" title="Copier">
-              <span class="material-icons">{{ copied === 'username' ? 'check' : 'content_copy' }}</span>
+            <button
+              class="copy-btn"
+              @click="copyToClipboard(localForm.username, 'username')"
+              title="Copier"
+            >
+              <span class="material-icons">{{
+                copied === 'username' ? 'check' : 'content_copy'
+              }}</span>
             </button>
           </div>
         </div>
@@ -68,16 +76,35 @@
             :type="showPassword ? 'text' : 'password'"
             required
           />
-          <span v-else class="form-value password-value">{{ showPassword ? localForm.password : '••••••••' }}</span>
+          <span v-else class="form-value password-value">{{
+            showPassword ? decryptedPassword || '••••••••' : '••••••••'
+          }}</span>
           <div class="input-actions">
-            <button class="toggle-password" @click="showPassword = !showPassword">
-              <span class="material-icons">{{ showPassword ? 'visibility_off' : 'visibility' }}</span>
+            <button
+              class="toggle-password"
+              @click="showPassword = !showPassword"
+            >
+              <span class="material-icons">{{
+                showPassword ? 'visibility_off' : 'visibility'
+              }}</span>
             </button>
-            <button v-if="modalMode !== 'view'" class="copy-btn" @click="generatePassword" title="Générer">
+            <button
+              v-if="modalMode !== 'view'"
+              class="copy-btn"
+              @click="generatePassword"
+              title="Générer"
+            >
               <span class="material-icons">casino</span>
             </button>
-            <button v-else class="copy-btn" @click="copyToClipboard(localForm.password, 'password')" title="Copier">
-              <span class="material-icons">{{ copied === 'password' ? 'check' : 'content_copy' }}</span>
+            <button
+              v-else
+              class="copy-btn"
+              @click="copyToClipboard(decryptedPassword, 'password')"
+              title="Copier"
+            >
+              <span class="material-icons">{{
+                copied === 'password' ? 'check' : 'content_copy'
+              }}</span>
             </button>
           </div>
         </div>
@@ -95,7 +122,11 @@
           maxlength="300"
         />
         <span v-else class="form-value">{{ localForm.note || '—' }}</span>
-        <span v-if="modalMode !== 'view'" class="char-counter" :class="{ 'near-limit': localForm.note?.length >= 270 }">
+        <span
+          v-if="modalMode !== 'view'"
+          class="char-counter"
+          :class="{ 'near-limit': localForm.note?.length >= 270 }"
+        >
           {{ localForm.note?.length || 0 }}/300
         </span>
       </div>
@@ -106,7 +137,11 @@
     <!-- Footer -->
     <template #footer>
       <div class="modal-footer-left">
-        <button v-if="modalMode === 'edit'" class="themed-button button-secondary btn-delete" @click="$emit('delete')">
+        <button
+          v-if="modalMode === 'edit'"
+          class="themed-button button-secondary btn-delete"
+          @click="$emit('delete')"
+        >
           <span>Supprimer</span>
           <span class="material-icons">delete</span>
         </button>
@@ -114,21 +149,33 @@
 
       <!-- Mode création / édition -->
       <div class="modal-footer-right" v-if="modalMode !== 'view'">
-        <button class="themed-button button-secondary" v-if="modalMode === 'edit'" @click="$emit('switch-mode', 'view')">Annuler</button>
-        <button class="themed-button button-primary" :disabled="loading" @click="$emit('submit', localForm)">
+        <button
+          class="themed-button button-secondary"
+          v-if="modalMode === 'edit'"
+          @click="$emit('switch-mode', 'view')"
+        >
+          Annuler
+        </button>
+        <button
+          class="themed-button button-primary"
+          :disabled="loading"
+          @click="$emit('submit', localForm)"
+        >
           {{ loading ? 'Enregistrement...' : 'Enregistrer' }}
         </button>
       </div>
 
       <!-- Mode vue -->
       <div class="modal-footer-right" v-else>
-        <button class="themed-button button-secondary btn-edit" @click="$emit('switch-mode', 'edit')">
+        <button
+          class="themed-button button-secondary btn-edit"
+          @click="$emit('switch-mode', 'edit')"
+        >
           <span>Modifier</span>
           <span class="material-icons edit-icon">edit</span>
         </button>
       </div>
     </template>
-
   </BaseModal>
 </template>
 
@@ -139,8 +186,9 @@ import BaseModal from '@/components/ui/BaseModal.vue'
 const props = defineProps({
   modalMode: { type: String, default: 'create' },
   form: { type: Object, required: true },
+  decryptedPassword: { type: String, default: '' },
   loading: { type: Boolean, default: false },
-  error: { type: String, default: '' }
+  error: { type: String, default: '' },
 })
 
 const emit = defineEmits(['close', 'submit', 'delete', 'switch-mode'])
@@ -153,7 +201,7 @@ const copyToClipboard = async (text, field) => {
   try {
     await navigator.clipboard.writeText(text)
     copied.value = field
-    setTimeout(() => copied.value = null, 2000)
+    setTimeout(() => (copied.value = null), 2000)
   } catch (err) {
     console.error('Erreur copie :', err)
   }
@@ -181,14 +229,21 @@ const generatePassword = () => {
   showPassword.value = true
 }
 
-watch(() => props.form, (val) => {
-  localForm.value = { ...val }
-  showPassword.value = props.modalMode !== 'view'
-}, { deep: true })
+watch(
+  () => props.form,
+  (val) => {
+    localForm.value = { ...val }
+    showPassword.value = props.modalMode !== 'view'
+  },
+  { deep: true }
+)
 
-watch(() => props.modalMode, (newMode) => {
-  showPassword.value = newMode !== 'view'
-})
+watch(
+  () => props.modalMode,
+  (newMode) => {
+    showPassword.value = newMode !== 'view'
+  }
+)
 
 function isFormValid() {
   return localForm.value.title?.trim() && localForm.value.password?.trim()
@@ -206,11 +261,31 @@ function handleKeydown(e) {
 </script>
 
 <style scoped>
-.char-counter { font-size: 0.75rem; color: #888; text-align: right; margin-top: 4px; display: block; }
-.char-counter.near-limit { color: #e74c3c; }
+.char-counter {
+  font-size: 0.75rem;
+  color: #888;
+  text-align: right;
+  margin-top: 4px;
+  display: block;
+}
+.char-counter.near-limit {
+  color: #e74c3c;
+}
 
-.btn-edit { display: flex; align-items: center; gap: 0.5rem; }
+.btn-edit {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
 
-.btn-delete { display: flex; align-items: center; gap: 0.5rem; border: 1px solid transparent; }
-.btn-delete:hover { border-color: #ff5555; color: #ff5555; }
+.btn-delete {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid transparent;
+}
+.btn-delete:hover {
+  border-color: #ff5555;
+  color: #ff5555;
+}
 </style>

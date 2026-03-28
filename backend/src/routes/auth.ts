@@ -9,8 +9,17 @@ import {
 } from '../services/email'
 import { generateToken, verifyToken, hashToken } from '../utils/jwt'
 import { authMiddleware } from '../middlewares/authMiddleware'
+import {
+  deriveKek,
+  encryptCryptoKey,
+  decryptCryptoKey,
+  generateCryptoKey,
+  generateSalt,
+} from '../utils/crypto'
+
 const router = express.Router()
 
+// ─── REGISTER ────────────────────────────────────────────────────────────────
 router.post('/register', async (req, res) => {
   const { email, firstName, lastName } = req.body
 
@@ -24,15 +33,12 @@ router.post('/register', async (req, res) => {
       return res.status(409).json({ error: 'Cet email est déjà utilisé' })
     }
 
-    const cryptoSalt = crypto.randomBytes(32).toString('hex')
-
     const user = await prisma.users.create({
       data: {
         email,
         firstName,
         lastName,
         is_active: false,
-        crypto_salt: cryptoSalt,
       },
     })
 
@@ -50,6 +56,7 @@ router.post('/register', async (req, res) => {
   }
 })
 
+// ─── ACTIVATE ─────────────────────────────────────────────────────────────────
 router.post('/activate', async (req, res) => {
   const { token, password } = req.body
 
@@ -70,11 +77,27 @@ router.post('/activate', async (req, res) => {
       return res.status(400).json({ error: 'Token invalide ou déjà utilisé' })
     }
 
+    // Hash du mot de passe maître
     const password_hash = await bcrypt.hash(password, 12)
+
+    // Génération de la crypto_key définitive (aléatoire, ne changera jamais)
+    const cryptoKey = generateCryptoKey()
+
+    // Génération du KEK salt
+    const kek_salt = generateSalt()
+
+    // Dérivation du KEK depuis le mot de passe
+    const kek = await deriveKek(password, kek_salt)
+
+    // Chiffrement de la crypto_key avec le KEK
+    const encrypted_crypto_key = encryptCryptoKey(cryptoKey, kek)
+
     await prisma.users.update({
       where: { user_id: user.user_id },
       data: {
         password_hash,
+        encrypted_crypto_key,
+        kek_salt,
         token_hash: null,
       },
     })
@@ -90,6 +113,7 @@ router.post('/activate', async (req, res) => {
   }
 })
 
+// ─── LOGIN ────────────────────────────────────────────────────────────────────
 router.post('/login', async (req, res) => {
   const { email, password } = req.body
 
@@ -140,7 +164,8 @@ router.post('/login', async (req, res) => {
 
     res.json({
       token,
-      crypto_salt: user.crypto_salt,
+      kek_salt,
+      encrypted_crypto_key,
       user: {
         user_id: user.user_id,
         email: user.email,
@@ -154,6 +179,7 @@ router.post('/login', async (req, res) => {
   }
 })
 
+// ─── VERIFY PASSWORD ──────────────────────────────────────────────────────────
 router.post('/password/verify', authMiddleware, async (req, res) => {
   const { password } = req.body
 
@@ -173,8 +199,21 @@ router.post('/password/verify', authMiddleware, async (req, res) => {
   res.json({ valid: true })
 })
 
+// ─── GET SALT + ENCRYPTED CRYPTO KEY ──────────────────────────────────────────
+router.get('/password/keys', authMiddleware, async (req, res) => {
+  const user = await prisma.users.findUnique({
+    where: { user_id: req.user.user_id },
+  })
+
+  res.json({
+    kek_salt: user.kek_salt,
+    encryptCryptoKey: user.encryptCryptoKey,
+  })
+})
+
+// ─── CHANGE PASSWORD ──────────────────────────────────────────────────────────
 router.put('/password', authMiddleware, async (req, res) => {
-  const { oldPassword, newPassword, reencryptedPasswords } = req.body
+  const { oldPassword, newPassword } = req.body
   const userId = req.user.user_id
 
   try {
@@ -189,27 +228,27 @@ router.put('/password', authMiddleware, async (req, res) => {
       return res.status(401).json({ error: 'Ancien mot de passe incorrect' })
     }
 
-    const newHash = await bcrypt.hash(newPassword, 12)
+    const oldKek = await deriveKek(oldPassword, user.kek_salt!)
+    let cryptoKey: string
+    try {
+      cryptoKey = decryptCryptoKey(user.encrypted_crypto_key!, oldKek)
+    } catch {
+      return res.status(500).json({ error: 'Impossible de déchiffrer la clé' })
+    }
 
-    await prisma.$transaction([
-      prisma.users.update({
-        where: { user_id: userId },
-        data: { password_hash: newHash },
-      }),
-      ...reencryptedPasswords.map(
-        ({
-          password_id,
-          password,
-        }: {
-          password_id: number
-          password: string
-        }) =>
-          prisma.passwords.update({
-            where: { password_id, user_id: userId },
-            data: { password },
-          })
-      ),
-    ])
+    const password_hash = await bcrypt.hash(newPassword, 12)
+    const new_kek_salt = generateSalt()
+    const newKek = await deriveKek(newPassword, new_kek_salt)
+    const encrypted_crypto_key = encryptCryptoKey(cryptoKey, newKek)
+
+    await prisma.users.update({
+      where: { user_id: userId },
+      data: {
+        password_hash,
+        kek_salt: new_kek_salt,
+        encrypted_crypto_key,
+      },
+    })
 
     res.json({ message: 'Mot de passe modifié avec succès' })
   } catch (error) {
@@ -217,6 +256,7 @@ router.put('/password', authMiddleware, async (req, res) => {
   }
 })
 
+// ─── DELETE ACCOUNT ───────────────────────────────────────────────────────────
 router.delete('/account', authMiddleware, async (req, res) => {
   const { password } = req.body
   const userId = req.user.user_id
@@ -246,4 +286,5 @@ router.delete('/account', authMiddleware, async (req, res) => {
     res.status(500).json({ error: 'Erreur serveur' })
   }
 })
+
 export default router

@@ -1,6 +1,6 @@
 // authStore.js
 import { defineStore } from 'pinia'
-import { deriveKey } from '@/utils/crypto'
+import { importCryptoKey, deriveKek, decryptCryptoKey } from '@/utils/crypto'
 import api from '@/services/api'
 
 export const useAuthStore = defineStore('auth', {
@@ -9,31 +9,40 @@ export const useAuthStore = defineStore('auth', {
     user: null,
     token: null,
     crypto_key: null,
-    crypto_salt: localStorage.getItem('crypto_salt') || null,
     isLoggingIn: false,
   }),
   getters: {
     isAdmin: (state) => {
       return state.user?.isAdmin
-    }
+    },
+    isLocked() {
+      return this.isAuthenticated && !this.crypto_key
+    },
   },
   actions: {
     async unlockKey(password) {
-      const response = await api.post('/auth/password/verify', { password });
-      const key = await deriveKey(password, this.crypto_salt);
-      this.crypto_key = key;
+      try {
+        await api.post('/auth/password/verify', { password })
+        const response = await api.get('/auth/password/keys')
+        const { kek_salt, encrypted_crypto_key } = response.data
+
+        this.crypto_key = await unlockCryptoKey(
+          password,
+          kek_salt,
+          encrypted_crypto_key
+        )
+      } catch (error) {
+        throw error
+      }
     },
-    async login(userData, tokenData, password, crypto_salt) {
+    async login(userData, tokenData, cryptoKey) {
       this.isLoggingIn = true
       this.isAuthenticated = true
       this.user = userData
       this.token = tokenData
-      this.crypto_key = await deriveKey(password, crypto_salt)
-      this.crypto_salt = crypto_salt
+      this.crypto_key = cryptoKey
       localStorage.setItem('user', JSON.stringify(userData))
       localStorage.setItem('token', tokenData)
-      localStorage.setItem('crypto_salt', crypto_salt) 
-      this.isLoggingIn = false 
     },
     logout() {
       this.isAuthenticated = false
@@ -42,7 +51,6 @@ export const useAuthStore = defineStore('auth', {
       this.crypto_key = null
       localStorage.removeItem('token')
       localStorage.removeItem('user')
-      localStorage.removeItem('crypto_salt') 
     },
     // Pour restaurer la session au rechargement de la page
     initFromStorage() {
@@ -53,6 +61,6 @@ export const useAuthStore = defineStore('auth', {
         this.token = token
         this.user = JSON.parse(user)
       }
-    }
-  }
+    },
+  },
 })

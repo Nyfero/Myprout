@@ -25,7 +25,8 @@ model users {
   password_hash         String?
   is_active             Boolean   @default(false)
   token_hash            String?   @unique @db.VarChar(64)
-  crypto_salt           String?   @unique @db.VarChar(64)
+  encrypted_crypto_key  String?   @db.Text
+  kek_salt              String?   @db.VarChar(64)
   created_at            DateTime  @default(now())
   updated_at            DateTime? @updatedAt
 }

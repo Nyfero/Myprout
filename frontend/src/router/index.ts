@@ -1,22 +1,42 @@
-import { createRouter, createWebHistory } from 'vue-router';
-import HomeView from '@/views/HomeView.vue';
-import LoginView from '@/views/LoginView.vue';
-import PasswordsView from '@/views/PasswordsView.vue';
-import UnlockView from '@/views/UnlockView.vue';
-import FilesView from '@/views/FilesView.vue';
-import ProfileView from '@/views/ProfileView.vue';
-import GamesView from '@/views/GamesView.vue';
-import MoviesView from '@/views/MoviesView.vue';
-import AdminView from '@/views/AdminView.vue';
-import { useAuthStore } from '@/stores/authStore';
+import { createRouter, createWebHistory } from 'vue-router'
+import HomeView from '@/views/HomeView.vue'
+import LoginView from '@/views/LoginView.vue'
+import PasswordsView from '@/views/PasswordsView.vue'
+import UnlockView from '@/views/UnlockView.vue'
+import FilesView from '@/views/FilesView.vue'
+import ProfileView from '@/views/ProfileView.vue'
+import GamesView from '@/views/GamesView.vue'
+import MoviesView from '@/views/MoviesView.vue'
+import AdminView from '@/views/AdminView.vue'
+import { useAuthStore } from '@/stores/authStore'
 
 const routes = [
   // { path: '/', name: 'Home', component: HomeView },
   { path: '/login', name: 'Login', component: LoginView },
-  { path: '/password', name: 'Password', component: PasswordsView, meta: { requiresAuth: true } },
-  { path: '/unlock', name: 'Unlock', component : UnlockView, meta: { requiresAuth: true } },
-  { path: '/profile', name: 'Profile', component: ProfileView, meta: { requiresAuth: true } },
-  { path: '/admin', name: 'Admin', component: AdminView, meta: { requiresAuth: true, requiresAdmin: true } },
+  {
+    path: '/password',
+    name: 'Password',
+    component: PasswordsView,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/unlock',
+    name: 'Unlock',
+    component: UnlockView,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/profile',
+    name: 'Profile',
+    component: ProfileView,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/admin',
+    name: 'Admin',
+    component: AdminView,
+    meta: { requiresAuth: true, requiresAdmin: true },
+  },
   // { path: '/files', name: 'Files', component: FilesView },
   // { path: '/games', name: 'Games', component: GamesView },
   // { path: '/movies', name: 'Movies', component: MoviesView },
@@ -27,24 +47,41 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
-});
+})
 
-router.beforeEach((to, from, next) => {
-  const authStore = useAuthStore();
-  const isAuthenticated = authStore.isAuthenticated;
+router.beforeEach(async (to, from, next) => {
+  const authStore = useAuthStore()
+  const token = localStorage.getItem('token')
+  const user = localStorage.getItem('user')
 
-  if (to.meta.requiresAuth && !isAuthenticated) {
-    next({ name: 'Login' });
-  } else if (to.name === 'Login' && isAuthenticated) {
-    next({ name: 'Password' });
-  } else if (to.name === 'Password' && authStore.token && !authStore.crypto_key && !authStore.isLoggingIn) {
-    next({ name: 'Unlock' });
-  } else if (to.meta.requiresAdmin && !authStore.isAdmin) {
-    next({ name: 'Password' });
-  } else {
-    next();
+  // Restaurer la session si token présent
+  if (token && user && !authStore.isAuthenticated) {
+    authStore.isAuthenticated = true
+    authStore.token = token
+    authStore.user = JSON.parse(user)
   }
-});
 
+  const requiresAuth = to.meta.requiresAuth
 
-export default router;
+  if (requiresAuth && !authStore.isAuthenticated) {
+    return next({ name: 'Login' })
+  }
+
+  // Authentifié mais clé manquante → UnlockView
+  if (requiresAuth && authStore.isLocked && to.name !== 'Unlock') {
+    return next({ name: 'Unlock', query: { redirect: to.fullPath } })
+  }
+
+  // Déjà connecté et déverrouillé → pas besoin d'aller au login
+  if (
+    (to.name === 'Login' || to.name === 'Unlock') &&
+    authStore.isAuthenticated &&
+    !authStore.isLocked
+  ) {
+    return next({ name: 'Password' })
+  }
+
+  next()
+})
+
+export default router

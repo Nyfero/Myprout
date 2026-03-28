@@ -158,9 +158,15 @@ async function onSubmit() {
       password: form.value.password,
     })
 
-    const { token, user, crypto_salt } = response.data
-    authStore.login(user, token, form.value.password, crypto_salt)
-    router.push('/password')
+    const { token, kek_salt, encrypted_crypto_key, user } = response.data
+    const crypto_key = await unlockCryptoKey(
+      form.value.password,
+      kek_salt,
+      encrypted_crypto_key
+    )
+    await authStore.login(user, token, crypto_key)
+    await router.push({ name: 'Password' })
+    authStore.isLoggingIn = false
   } catch (error) {
     errorMessage.value =
       error.response?.data?.error ?? 'Erreur de connexion au serveur'

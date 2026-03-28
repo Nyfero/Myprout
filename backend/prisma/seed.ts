@@ -1,27 +1,41 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@prisma/client'
+import bcrypt from 'bcrypt'
+import crypto from 'crypto'
+import {
+  deriveKek,
+  encryptCryptoKey,
+  generateCryptoKey,
+  generateSalt,
+} from '../src/utils/crypto.ts'
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient()
 
 async function main() {
-  console.log('🌱 Début du seed...');
+  console.log('🌱 Début du seed...')
 
-  const email = process.env.ADMIN_EMAIL!;
-  const firstName = process.env.ADMIN_FIRSTNAME!;
-  const lastName = process.env.ADMIN_LASTNAME!;
-  const password_hash = await bcrypt.hash(process.env.ADMIN_PASSWORD!, 12);
+  const email = process.env.ADMIN_EMAIL!
+  const firstName = process.env.ADMIN_FIRSTNAME!
+  const lastName = process.env.ADMIN_LASTNAME!
+  const password = process.env.ADMIN_PASSWORD!
 
-  // 1. Créer ou récupérer le rôle ADMIN
+  // Hash du mot de passe
+  const password_hash = await bcrypt.hash(password, 12)
+
+  // Génération de la crypto_key + KEK
+  const cryptoKey = generateCryptoKey()
+  const kek_salt = generateSalt()
+  const kek = await deriveKek(password, kek_salt)
+  const encrypted_crypto_key = encryptCryptoKey(cryptoKey, kek)
+
+  // 1. Rôle ADMIN
   const adminRole = await prisma.roles.upsert({
     where: { role_id: 1 },
     update: {},
-    create: {
-      role: 'ADMIN',
-    },
-  });
+    create: { role: 'ADMIN' },
+  })
+  console.log('✅ Rôle créé :', adminRole)
 
-  console.log('✅ Rôle créé :', adminRole);
-
-  // 2. Créer l'utilisateur admin
+  // 2. Utilisateur admin
   const admin = await prisma.users.upsert({
     where: { email },
     update: {},
@@ -31,20 +45,21 @@ async function main() {
       lastName,
       password_hash,
       is_active: true,
-      roles: {
-        connect: { role_id: adminRole.role_id },
+      encrypted_crypto_key,
+      kek_salt,
+      userRoles: {
+        create: { role_id: adminRole.role_id },
       },
     },
-  });
-
-  console.log('✅ Admin créé avec succès :', admin);
+  })
+  console.log('✅ Admin créé avec succès :', admin)
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Erreur :', e);
-    process.exit(1);
+    console.error('❌ Erreur :', e)
+    process.exit(1)
   })
   .finally(async () => {
-    await prisma.$disconnect();
-  });
+    await prisma.$disconnect()
+  })

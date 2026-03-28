@@ -1,11 +1,23 @@
 <template>
   <div class="passwordsList-main-wrapper">
     <div class="passwordsList-header">
-      <h1 class="themed-h1 passwordsList-title">Mes mots de passe ({{ passwordsList.length }})</h1>
+      <h1 class="themed-h1 passwordsList-title">
+        Mes mots de passe ({{ passwordsList.length }})
+      </h1>
       <div class="passwordsList-actions">
-        <button class="themed-button button-primary add-wrap" @click="openCreate()">Ajouter +</button>
+        <button
+          class="themed-button button-primary add-wrap"
+          @click="openCreate()"
+        >
+          Ajouter +
+        </button>
         <div class="filter-wrap" v-if="passwordsList.length !== 0">
-          <input class="themed-input search-input" v-model="search" type="text" placeholder="Rechercher..." />
+          <input
+            class="themed-input search-input"
+            v-model="search"
+            type="text"
+            placeholder="Rechercher..."
+          />
           <!-- <button class="themed-button button-secondary filter-btn">
             <span class="material-icons">filter_list</span>
           </button> -->
@@ -15,7 +27,9 @@
 
     <div v-if="loading" class="loading">Chargement...</div>
 
-    <div v-else-if="filteredPasswords.length === 0" class="empty">Aucun mot de passe</div>
+    <div v-else-if="filteredPasswords.length === 0" class="empty">
+      Aucun mot de passe
+    </div>
 
     <div v-else class="passwordsList-wrapper">
       <PasswordsAlphabet @scroll="scrollToLetter" />
@@ -33,8 +47,8 @@
             :key="password.password_id"
             :password="password"
             :icon="icons[extractDomain(password.title)]"
-            :isVisible="visiblePasswords.includes(password.password_id)"
-            :decryptedValue="decryptedCache[password.password_id]"
+            :isVisible="visiblePasswords[password.password_id] !== undefined"
+            :decryptedValue="visiblePasswords[password.password_id]"
             @toggle-favorite="toggleFavorite"
             @toggle-show="toggleShowPassword"
             @copy="handleCopyPassword"
@@ -52,6 +66,7 @@
     :form="form"
     :loading="formLoading"
     :error="formError"
+    :decryptedPassword="decryptedModalPassword"
     @close="closeModal"
     @submit="submitPassword"
     @delete="handleDeletePassword(editingId)"
@@ -74,10 +89,20 @@ const passwordsListRef = ref(null)
 const toastRef = ref(null)
 
 const {
-  passwordsList, loading, search, visiblePasswords,
-  decryptedCache, icons, filteredPasswords, groupedPasswords,
-  extractDomain, toggleFavorite, toggleShowPassword,
-  decryptForCopy, createPassword, updatePassword, deletePassword
+  passwordsList,
+  loading,
+  search,
+  visiblePasswords,
+  icons,
+  filteredPasswords,
+  groupedPasswords,
+  extractDomain,
+  toggleFavorite,
+  toggleShowPassword,
+  decryptForCopy,
+  createPassword,
+  updatePassword,
+  deletePassword,
 } = usePasswords()
 
 // --- Scroll ---
@@ -89,7 +114,7 @@ const scrollToLetter = (letter) => {
   const targetRect = target.getBoundingClientRect()
   list.scrollTo({
     top: list.scrollTop + (targetRect.top - listRect.top),
-    behavior: 'smooth'
+    behavior: 'smooth',
   })
 }
 
@@ -100,6 +125,7 @@ const formError = ref('')
 const editingId = ref(null)
 const modalMode = ref('create') // 'create' | 'view' | 'edit'
 const form = ref({ title: '', username: '', password: '', note: '' })
+const decryptedModalPassword = ref('')
 
 function openView(password) {
   openModal(password, 'view')
@@ -110,23 +136,19 @@ function openCreate() {
 }
 
 async function openModal(password = null, mode = 'create') {
-  formError.value = ''
   modalMode.value = mode
-
   if (password) {
-    editingId.value = password.password_id
-    const decrypted = await decryptPassword(password.password, authStore.crypto_key)
-    form.value = {
-      title: password.title,
-      username: password.username || '',
-      password: decrypted,
-      note: password.note || ''
+    form.value = { ...password }
+    if (mode === 'view' || mode === 'edit') {
+      decryptedModalPassword.value = await decryptPassword(
+        password.password,
+        authStore.crypto_key
+      )
     }
   } else {
-    editingId.value = null
     form.value = { title: '', username: '', password: '', note: '' }
+    decryptedModalPassword.value = ''
   }
-
   showModal.value = true
 }
 
@@ -174,7 +196,6 @@ async function handleDeletePassword(id) {
     console.error('Erreur lors de la suppression')
   }
 }
-
 </script>
 
 <style scoped>
@@ -255,14 +276,14 @@ async function handleDeletePassword(id) {
 }
 
 .passwordsList-wrapper {
-  display:flex;
+  display: flex;
   flex: 1;
   overflow: hidden;
 }
 
 .passwordsList {
   display: flex;
-  flex:97%;
+  flex: 97%;
   flex-direction: column;
   gap: 0.8rem;
   overflow-y: auto;
@@ -274,7 +295,8 @@ async function handleDeletePassword(id) {
   display: none;
 }
 
-.loading, .empty {
+.loading,
+.empty {
   text-align: center;
   color: #aaa;
   margin-top: 3rem;
