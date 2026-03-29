@@ -199,18 +199,6 @@ router.post('/password/verify', authMiddleware, async (req, res) => {
   res.json({ valid: true })
 })
 
-// ─── GET SALT + ENCRYPTED CRYPTO KEY ──────────────────────────────────────────
-router.get('/password/keys', authMiddleware, async (req, res) => {
-  const user = await prisma.users.findUnique({
-    where: { user_id: req.user.user_id },
-  })
-
-  res.json({
-    kek_salt: user.kek_salt,
-    encryptCryptoKey: user.encryptCryptoKey,
-  })
-})
-
 // ─── CHANGE PASSWORD ──────────────────────────────────────────────────────────
 router.put('/password', authMiddleware, async (req, res) => {
   const { oldPassword, newPassword } = req.body
@@ -240,10 +228,9 @@ router.put('/password', authMiddleware, async (req, res) => {
     }
 
     const password_hash = await bcrypt.hash(newPassword, 12)
-    const new_kek_salt = generateSalt()
     const newKek = await deriveKek(
       newPassword,
-      Buffer.from(new_kek_salt, 'hex')
+      Buffer.from(user.kek_salt!, 'hex')
     )
     const encrypted_crypto_key = encryptCryptoKey(cryptoKey, newKek)
 
@@ -251,12 +238,14 @@ router.put('/password', authMiddleware, async (req, res) => {
       where: { user_id: userId },
       data: {
         password_hash,
-        kek_salt: new_kek_salt,
         encrypted_crypto_key,
       },
     })
 
-    res.json({ message: 'Mot de passe modifié avec succès' })
+    res.json({
+      encryptedCryptoKey: encrypted_crypto_key,
+      message: 'Mot de passe modifié avec succès',
+    })
   } catch (error) {
     res.status(500).json({ error: 'Erreur serveur' })
   }
