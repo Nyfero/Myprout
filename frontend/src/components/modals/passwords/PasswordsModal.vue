@@ -242,6 +242,9 @@ watch(
   () => props.modalMode,
   (newMode) => {
     showPassword.value = newMode !== 'view'
+    if (newMode === 'edit' && props.decryptedPassword) {
+      localForm.value.password = props.decryptedPassword
+    }
   }
 )
 

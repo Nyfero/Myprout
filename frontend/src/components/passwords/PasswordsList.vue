@@ -138,14 +138,20 @@ function openCreate() {
 async function openModal(password = null, mode = 'create') {
   modalMode.value = mode
   if (password) {
-    form.value = { ...password }
-    if (mode === 'view' || mode === 'edit') {
-      decryptedModalPassword.value = await decryptPassword(
-        password.password,
-        authStore.crypto_key
-      )
+    editingId.value = password.password_id
+
+    const decrypted = await decryptPassword(
+      password.password,
+      authStore.crypto_key
+    )
+    decryptedModalPassword.value = decrypted
+
+    form.value = {
+      ...password,
+      password: mode === 'edit' ? decrypted : password.password,
     }
   } else {
+    editingId.value = null
     form.value = { title: '', username: '', password: '', note: '' }
     decryptedModalPassword.value = ''
   }
