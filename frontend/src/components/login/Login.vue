@@ -121,6 +121,7 @@
 import { ref, computed } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
 import { useRouter } from 'vue-router'
+import { unlockCryptoKey } from '@/utils/crypto'
 import api from '@/services/api.js'
 
 // ==================== State ====================
@@ -158,11 +159,11 @@ async function onSubmit() {
       password: form.value.password,
     })
 
-    const { token, kek_salt, encrypted_crypto_key, user } = response.data
+    const { token, user } = response.data
     const crypto_key = await unlockCryptoKey(
       form.value.password,
-      kek_salt,
-      encrypted_crypto_key
+      user.kek_salt,
+      user.encrypted_crypto_key
     )
     await authStore.login(user, token, crypto_key)
     await router.push({ name: 'Password' })

@@ -21,15 +21,12 @@ export function deriveKek(password, salt) {
 // Chiffre la crypto_key avec le KEK
 export function encryptCryptoKey(cryptoKeyHex, kek) {
   const iv = crypto.randomBytes(12)
+  const keyBytes = Buffer.from(cryptoKeyHex, 'hex')
   const cipher = crypto.createCipheriv('aes-256-gcm', kek, iv)
 
-  const encrypted = Buffer.concat([
-    cipher.update(cryptoKeyHex, 'utf8'),
-    cipher.final(),
-  ])
+  const encrypted = Buffer.concat([cipher.update(keyBytes), cipher.final()])
   const tag = cipher.getAuthTag()
 
-  // Format stocké : iv:tag:encrypted (tout en hex)
   return [
     iv.toString('hex'),
     tag.toString('hex'),
@@ -38,9 +35,8 @@ export function encryptCryptoKey(cryptoKeyHex, kek) {
 }
 
 // Déchiffre la crypto_key avec le KEK
-export function decryptCryptoKey(encryptedPayload, kek) {
-  const [ivHex, tagHex, encryptedHex] = encryptedPayload.split(':')
-
+export function decryptCryptoKey(encryptedData, kek) {
+  const [ivHex, tagHex, encryptedHex] = encryptedData.split(':')
   const iv = Buffer.from(ivHex, 'hex')
   const tag = Buffer.from(tagHex, 'hex')
   const encrypted = Buffer.from(encryptedHex, 'hex')
@@ -48,9 +44,11 @@ export function decryptCryptoKey(encryptedPayload, kek) {
   const decipher = crypto.createDecipheriv('aes-256-gcm', kek, iv)
   decipher.setAuthTag(tag)
 
-  return Buffer.concat([decipher.update(encrypted), decipher.final()]).toString(
-    'utf8'
-  )
+  const decrypted = Buffer.concat([
+    decipher.update(encrypted),
+    decipher.final(),
+  ])
+  return decrypted.toString('hex')
 }
 
 // Génère une crypto_key aléatoire

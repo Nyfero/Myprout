@@ -32,20 +32,18 @@
 <script setup>
 import { ref } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
-import { useRouter, useRoute } from 'vue-router'
+import { useRouter } from 'vue-router'
 
 const password = ref('')
 const authStore = useAuthStore()
 const router = useRouter()
-const route = useRoute()
 const showPassword = ref(false)
 const errorMessage = ref('')
 
 const unlock = async () => {
   try {
     await authStore.unlockKey(password.value)
-    const redirect = route.query.redirect || '/password'
-    router.push(redirect)
+    router.push('/password')
   } catch (error) {
     errorMessage.value = 'Mot de passe incorrect'
   }

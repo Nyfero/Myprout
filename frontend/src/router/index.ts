@@ -54,7 +54,6 @@ router.beforeEach(async (to, from, next) => {
   const token = localStorage.getItem('token')
   const user = localStorage.getItem('user')
 
-  // Restaurer la session si token présent
   if (token && user && !authStore.isAuthenticated) {
     authStore.isAuthenticated = true
     authStore.token = token
@@ -67,12 +66,15 @@ router.beforeEach(async (to, from, next) => {
     return next({ name: 'Login' })
   }
 
-  // Authentifié mais clé manquante → UnlockView
-  if (requiresAuth && authStore.isLocked && to.name !== 'Unlock') {
+  if (
+    to.name === 'Password' &&
+    requiresAuth &&
+    authStore.isLocked &&
+    to.name !== 'Unlock'
+  ) {
     return next({ name: 'Unlock', query: { redirect: to.fullPath } })
   }
 
-  // Déjà connecté et déverrouillé → pas besoin d'aller au login
   if (
     (to.name === 'Login' || to.name === 'Unlock') &&
     authStore.isAuthenticated &&

@@ -24,7 +24,7 @@ async function main() {
   // Génération de la crypto_key + KEK
   const cryptoKey = generateCryptoKey()
   const kek_salt = generateSalt()
-  const kek = await deriveKek(password, kek_salt)
+  const kek = await deriveKek(password, Buffer.from(kek_salt, 'hex'))
   const encrypted_crypto_key = encryptCryptoKey(cryptoKey, kek)
 
   // 1. Rôle ADMIN

@@ -87,7 +87,7 @@ router.post('/activate', async (req, res) => {
     const kek_salt = generateSalt()
 
     // Dérivation du KEK depuis le mot de passe
-    const kek = await deriveKek(password, kek_salt)
+    const kek = await deriveKek(password, Buffer.from(kek_salt, 'hex'))
 
     // Chiffrement de la crypto_key avec le KEK
     const encrypted_crypto_key = encryptCryptoKey(cryptoKey, kek)
@@ -164,13 +164,13 @@ router.post('/login', async (req, res) => {
 
     res.json({
       token,
-      kek_salt,
-      encrypted_crypto_key,
       user: {
         user_id: user.user_id,
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
+        kek_salt: user.kek_salt,
+        encrypted_crypto_key: user.encrypted_crypto_key,
         isAdmin,
       },
     })
@@ -228,7 +228,10 @@ router.put('/password', authMiddleware, async (req, res) => {
       return res.status(401).json({ error: 'Ancien mot de passe incorrect' })
     }
 
-    const oldKek = await deriveKek(oldPassword, user.kek_salt!)
+    const oldKek = await deriveKek(
+      oldPassword,
+      Buffer.from(user.kek_salt!, 'hex')
+    )
     let cryptoKey: string
     try {
       cryptoKey = decryptCryptoKey(user.encrypted_crypto_key!, oldKek)
@@ -238,7 +241,10 @@ router.put('/password', authMiddleware, async (req, res) => {
 
     const password_hash = await bcrypt.hash(newPassword, 12)
     const new_kek_salt = generateSalt()
-    const newKek = await deriveKek(newPassword, new_kek_salt)
+    const newKek = await deriveKek(
+      newPassword,
+      Buffer.from(new_kek_salt, 'hex')
+    )
     const encrypted_crypto_key = encryptCryptoKey(cryptoKey, newKek)
 
     await prisma.users.update({

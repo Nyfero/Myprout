@@ -1,6 +1,6 @@
 // authStore.js
 import { defineStore } from 'pinia'
-import { importCryptoKey, deriveKek, decryptCryptoKey } from '@/utils/crypto'
+import { unlockCryptoKey } from '@/utils/crypto'
 import api from '@/services/api'
 
 export const useAuthStore = defineStore('auth', {
@@ -23,13 +23,10 @@ export const useAuthStore = defineStore('auth', {
     async unlockKey(password) {
       try {
         await api.post('/auth/password/verify', { password })
-        const response = await api.get('/auth/password/keys')
-        const { kek_salt, encrypted_crypto_key } = response.data
-
         this.crypto_key = await unlockCryptoKey(
           password,
-          kek_salt,
-          encrypted_crypto_key
+          this.user.kek_salt,
+          this.user.encrypted_crypto_key
         )
       } catch (error) {
         throw error
