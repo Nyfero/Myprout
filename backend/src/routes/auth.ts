@@ -58,7 +58,7 @@ router.post('/register', async (req, res) => {
 
 // ─── ACTIVATE ─────────────────────────────────────────────────────────────────
 router.post('/activate', async (req, res) => {
-  const { token, password } = req.body
+  const { token, password, security_questions } = req.body
 
   try {
     let decoded
@@ -92,6 +92,36 @@ router.post('/activate', async (req, res) => {
     // Chiffrement de la crypto_key avec le KEK
     const encrypted_crypto_key = encryptCryptoKey(cryptoKey, kek)
 
+    // Concaténation des réponses normalisées
+    const recoveryPassphrase = security_questions
+      .map((q) => q.answer.toLowerCase().replace(/\s/g, '').trim())
+      .join('')
+
+    console.log(recoveryPassphrase)
+
+    // Dérivation du recovery KEK depuis les réponses + kek_salt (réutilisé)
+    const recoveryKek = await deriveKek(
+      recoveryPassphrase,
+      Buffer.from(kek_salt, 'hex')
+    )
+
+    // Chiffrement de la crypto_key avec le recovery KEK
+    const recovery_encrypted_crypto_key = encryptCryptoKey(
+      cryptoKey,
+      recoveryKek
+    )
+
+    // Hash des réponses pour vérification future
+    const hashedQuestions = await Promise.all(
+      security_questions.map(async (q) => ({
+        question: q.question,
+        answer_hash: await bcrypt.hash(
+          q.answer.toLowerCase().replace(/\s/g, '').trim(),
+          12
+        ),
+      }))
+    )
+
     await prisma.users.update({
       where: { user_id: user.user_id },
       data: {
@@ -99,6 +129,9 @@ router.post('/activate', async (req, res) => {
         encrypted_crypto_key,
         kek_salt,
         token_hash: null,
+        is_active: true,
+        recovery_questions: hashedQuestions,
+        recovery_encrypted_crypto_key,
       },
     })
 
@@ -270,7 +303,7 @@ router.delete('/account', authMiddleware, async (req, res) => {
 
     await prisma.$transaction([
       prisma.passwords.deleteMany({ where: { user_id: userId } }),
-      prisma.ipAddress.deleteMany({ where: { user_id: userId } }),
+      // prisma.ipAddress.deleteMany({ where: { user_id: userId } }),
       prisma.userRoles.deleteMany({ where: { user_id: userId } }),
       prisma.users.delete({ where: { user_id: userId } }),
     ])

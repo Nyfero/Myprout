@@ -4,12 +4,10 @@
       <div :key="step">
         <!-- ==================== FORM ==================== -->
         <template v-if="step === 'form'">
-          <!-- Header -->
           <div class="login-header">
             <h2 class="themed-h2">Définir votre mot de passe</h2>
           </div>
 
-          <!-- Body -->
           <div class="login-body">
             <form @submit.prevent="handleSubmit">
               <div class="form-wrapper">
@@ -26,14 +24,13 @@
                     type="button"
                     @click="showPassword = !showPassword"
                   >
-                    <span class="material-icons">
-                      {{ showPassword ? 'visibility_off' : 'visibility' }}
-                    </span>
+                    <span class="material-icons">{{
+                      showPassword ? 'visibility_off' : 'visibility'
+                    }}</span>
                   </button>
                 </div>
               </div>
 
-              <!-- Critères -->
               <ul class="strength-criteria">
                 <li :class="criteria.length ? 'met' : 'unmet'">
                   <span class="criteria-icon">{{
@@ -75,17 +72,110 @@
                     type="button"
                     @click="showConfirmPassword = !showConfirmPassword"
                   >
-                    <span class="material-icons">
-                      {{
-                        showConfirmPassword ? 'visibility_off' : 'visibility'
-                      }}
-                    </span>
+                    <span class="material-icons">{{
+                      showConfirmPassword ? 'visibility_off' : 'visibility'
+                    }}</span>
                   </button>
                 </div>
               </div>
+
               <p v-if="errorMessage" class="form-error">{{ errorMessage }}</p>
 
-              <!-- Footer -->
+              <div class="login-footer">
+                <button
+                  class="themed-button button-primary"
+                  type="submit"
+                  :disabled="isLoading"
+                >
+                  {{ isLoading ? 'En cours...' : 'Continuer' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </template>
+
+        <!-- ==================== QUESTIONS ==================== -->
+        <template v-else-if="step === 'questions'">
+          <div class="login-header">
+            <h2 class="themed-h2">Questions de sécurité</h2>
+            <p class="login-subtitle">
+              Ces questions permettront de récupérer votre compte si vous
+              oubliez votre mot de passe.
+            </p>
+          </div>
+
+          <div class="login-body">
+            <form @submit.prevent="handleQuestionsSubmit">
+              <div
+                v-for="(q, index) in questions"
+                :key="index"
+                class="question-block"
+              >
+                <p class="question-label">Question {{ index + 1 }}</p>
+
+                <div class="themed-select-wrapper">
+                  <select
+                    class="themed-select"
+                    v-model="q.selected"
+                    @change="q.custom = ''"
+                  >
+                    <option value="" disabled>Choisir une question...</option>
+                    <optgroup label="Questions prédéfinies">
+                      <option
+                        v-for="preset in availableQuestions(index)"
+                        :key="preset"
+                        :value="preset"
+                      >
+                        {{ preset }}
+                      </option>
+                    </optgroup>
+                    <optgroup label="Questions personnalisé">
+                      <option value="__custom__">
+                        ✎ Écrire ma propre question
+                      </option>
+                    </optgroup>
+                  </select>
+                </div>
+
+                <div class="form-wrapper">
+                  <input
+                    v-if="q.selected === '__custom__'"
+                    class="themed-input"
+                    v-model="q.custom"
+                    type="text"
+                    placeholder="Votre question personnalisée"
+                    maxlength="80"
+                    required
+                  />
+                  <span
+                    v-if="q.selected === '__custom__'"
+                    class="char-counter"
+                    :class="{ 'near-limit': q.custom?.length >= 60 }"
+                  >
+                    {{ q.custom?.length || 0 }}/80
+                  </span>
+                </div>
+
+                <div class="form-wrapper">
+                  <input
+                    class="themed-input"
+                    v-model="q.answer"
+                    type="text"
+                    placeholder="Votre réponse"
+                    maxlength="30"
+                    required
+                  />
+                  <span
+                    class="char-counter"
+                    :class="{ 'near-limit': q.answer?.length >= 20 }"
+                  >
+                    {{ q.answer?.length || 0 }}/30
+                  </span>
+                </div>
+              </div>
+
+              <p v-if="errorMessage" class="form-error">{{ errorMessage }}</p>
+
               <div class="login-footer">
                 <button
                   class="themed-button button-primary"
@@ -94,6 +184,13 @@
                 >
                   {{ isLoading ? 'En cours...' : 'Valider' }}
                 </button>
+                <button
+                  class="themed-button button-secondary"
+                  type="button"
+                  @click="step = 'form'"
+                >
+                  Retour
+                </button>
               </div>
             </form>
           </div>
@@ -101,16 +198,14 @@
 
         <!-- ==================== SUCCESS ==================== -->
         <template v-else-if="step === 'done'">
-          <!-- Header -->
           <div class="login-header">
             <svg class="svg" viewBox="0 0 52 52" stroke="#4bb543">
               <circle class="svg-circle" cx="26" cy="26" r="25" fill="none" />
               <path class="svg-check" fill="none" d="M14 27l7 7 16-16" />
             </svg>
-            <h2 class="themed-h2">Mot de passe défini avec succès !</h2>
+            <h2 class="themed-h2">Compte activé avec succès !</h2>
           </div>
 
-          <!-- Footer -->
           <div class="login-footer">
             <button
               class="themed-button button-secondary"
@@ -126,7 +221,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, reactive } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/services/api'
 
@@ -142,6 +237,32 @@ const confirmPassword = ref('')
 const showConfirmPassword = ref(false)
 const isLoading = ref(false)
 const errorMessage = ref('')
+
+// ==================== Questions ====================
+const PRESET_QUESTIONS = [
+  'Quel est le nom de votre premier animal de compagnie ?',
+  'Quelle est la ville où vous êtes né(e) ?',
+  "Quel est le prénom de votre meilleur(e) ami(e) d'enfance ?",
+  'Quel est le nom de votre école primaire ?',
+  'Quel est le modèle de votre première voiture ?',
+  'Quel est le plat préféré de votre mère ?',
+  'Quel était le surnom de votre grand-père ?',
+  'Quelle est la rue où vous avez grandi ?',
+]
+
+const questions = reactive([
+  { selected: '', custom: '', answer: '' },
+  { selected: '', custom: '', answer: '' },
+  { selected: '', custom: '', answer: '' },
+])
+
+// Empêche de choisir la même question prédéfinie deux fois
+function availableQuestions(currentIndex) {
+  const selectedElsewhere = questions
+    .filter((q, i) => i !== currentIndex && q.selected !== '__custom__')
+    .map((q) => q.selected)
+  return PRESET_QUESTIONS.filter((q) => !selectedElsewhere.includes(q))
+}
 
 // ==================== Password Strength ====================
 const criteria = computed(() => ({
@@ -159,19 +280,50 @@ onMounted(() => {
 })
 
 // ==================== Methods ====================
-async function handleSubmit() {
+function handleSubmit() {
+  errorMessage.value = ''
+
   if (password.value !== confirmPassword.value) {
     errorMessage.value = 'Les mots de passe ne correspondent pas'
     return
   }
 
-  isLoading.value = true
+  step.value = 'questions'
+}
+
+async function handleQuestionsSubmit() {
   errorMessage.value = ''
+
+  // Validation
+  for (let i = 0; i < questions.length; i++) {
+    const q = questions[i]
+    if (!q.selected) {
+      errorMessage.value = `Veuillez sélectionner une question pour le bloc ${i + 1}`
+      return
+    }
+    if (q.selected === '__custom__' && !q.custom.trim()) {
+      errorMessage.value = `Veuillez saisir votre question personnalisée (bloc ${i + 1})`
+      return
+    }
+    if (!q.answer.trim()) {
+      errorMessage.value = `Veuillez saisir une réponse pour la question ${i + 1}`
+      return
+    }
+  }
+
+  // Formatage final
+  const securityQuestions = questions.map((q) => ({
+    question: q.selected === '__custom__' ? q.custom.trim() : q.selected,
+    answer: q.answer.trim(),
+  }))
+
+  isLoading.value = true
 
   try {
     await api.post('/auth/activate', {
       token,
       password: password.value,
+      security_questions: securityQuestions,
     })
 
     step.value = 'done'
@@ -190,6 +342,12 @@ async function handleSubmit() {
   margin-bottom: 1.5em;
 }
 
+.login-subtitle {
+  font-size: 0.85em;
+  color: #aaa;
+  margin-top: 0.4em;
+}
+
 .login-body {
   display: flex;
   flex-direction: column;
@@ -201,6 +359,61 @@ async function handleSubmit() {
   flex-direction: column;
   gap: 0.6em;
   margin-top: 1em;
+}
+
+/* ==================== Question Block ==================== */
+.question-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+  padding: 1em;
+  border: 1px solid var(--border-color, #333);
+  border-radius: 8px;
+  margin-bottom: 0.8em;
+}
+
+.question-label {
+  font-size: 0.8em;
+  font-weight: 600;
+  color: #aaa;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.char-counter {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+}
+
+.themed-input {
+  padding-right: 3em;
+}
+
+/* ==================== Select ==================== */
+.themed-select-wrapper {
+  position: relative;
+}
+
+.themed-select {
+  width: 100%;
+  appearance: none;
+  background: var(--input-bg, #1e1e1e);
+  color: var(--text-color, #fff);
+  border: 1px solid var(--border-color, #444);
+  border-radius: 6px;
+  padding: 0.6em 2em 0.6em 0.8em;
+  font-size: 0.9em;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='%23aaa'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.7em center;
+}
+
+.themed-select:focus {
+  outline: none;
+  border-color: var(--primary-color, #646cff);
 }
 
 /* ==================== Criteria ==================== */
@@ -224,7 +437,6 @@ async function handleSubmit() {
 .strength-criteria li.met {
   color: #4bb543;
 }
-
 .strength-criteria li.unmet {
   color: #aaa;
 }
