@@ -22,6 +22,7 @@ const router = express.Router()
 // ─── REGISTER ────────────────────────────────────────────────────────────────
 router.post('/register', async (req, res) => {
   const { email, firstName, lastName } = req.body
+  console.log('0')
 
   if (!email || !firstName || !lastName) {
     return res.status(400).json({ error: 'Tous les champs sont requis' })
@@ -41,7 +42,6 @@ router.post('/register', async (req, res) => {
         is_active: false,
       },
     })
-
     await sendApprovalEmailToAdmin(user)
     await sendPendingApprovalEmail(user)
 
