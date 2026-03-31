@@ -94,108 +94,6 @@
           </div>
         </template>
 
-        <!-- ==================== QUESTIONS ==================== -->
-        <template v-else-if="step === 'questions'">
-          <div class="login-header">
-            <h2 class="themed-h2">Questions de sécurité</h2>
-            <p class="login-subtitle">
-              Ces questions permettront de récupérer votre compte si vous
-              oubliez votre mot de passe.
-            </p>
-          </div>
-
-          <div class="login-body">
-            <form @submit.prevent="handleQuestionsSubmit">
-              <div
-                v-for="(q, index) in questions"
-                :key="index"
-                class="question-block"
-              >
-                <p class="question-label">Question {{ index + 1 }}</p>
-
-                <div class="themed-select-wrapper">
-                  <select
-                    class="themed-select"
-                    v-model="q.selected"
-                    @change="q.custom = ''"
-                  >
-                    <option value="" disabled>Choisir une question...</option>
-                    <optgroup label="Questions prédéfinies">
-                      <option
-                        v-for="preset in availableQuestions(index)"
-                        :key="preset"
-                        :value="preset"
-                      >
-                        {{ preset }}
-                      </option>
-                    </optgroup>
-                    <optgroup label="Questions personnalisé">
-                      <option value="__custom__">
-                        ✎ Écrire ma propre question
-                      </option>
-                    </optgroup>
-                  </select>
-                </div>
-
-                <div class="form-wrapper">
-                  <input
-                    v-if="q.selected === '__custom__'"
-                    class="themed-input"
-                    v-model="q.custom"
-                    type="text"
-                    placeholder="Votre question personnalisée"
-                    maxlength="80"
-                    required
-                  />
-                  <span
-                    v-if="q.selected === '__custom__'"
-                    class="char-counter"
-                    :class="{ 'near-limit': q.custom?.length >= 60 }"
-                  >
-                    {{ q.custom?.length || 0 }}/80
-                  </span>
-                </div>
-
-                <div class="form-wrapper">
-                  <input
-                    class="themed-input"
-                    v-model="q.answer"
-                    type="text"
-                    placeholder="Votre réponse"
-                    maxlength="30"
-                    required
-                  />
-                  <span
-                    class="char-counter"
-                    :class="{ 'near-limit': q.answer?.length >= 20 }"
-                  >
-                    {{ q.answer?.length || 0 }}/30
-                  </span>
-                </div>
-              </div>
-
-              <p v-if="errorMessage" class="form-error">{{ errorMessage }}</p>
-
-              <div class="login-footer">
-                <button
-                  class="themed-button button-primary"
-                  type="submit"
-                  :disabled="isLoading"
-                >
-                  {{ isLoading ? 'En cours...' : 'Valider' }}
-                </button>
-                <button
-                  class="themed-button button-secondary"
-                  type="button"
-                  @click="step = 'form'"
-                >
-                  Retour
-                </button>
-              </div>
-            </form>
-          </div>
-        </template>
-
         <!-- ==================== SUCCESS ==================== -->
         <template v-else-if="step === 'done'">
           <div class="login-header">
@@ -203,9 +101,14 @@
               <circle class="svg-circle" cx="26" cy="26" r="25" fill="none" />
               <path class="svg-check" fill="none" d="M14 27l7 7 16-16" />
             </svg>
-            <h2 class="themed-h2">Compte activé avec succès !</h2>
+            <h2 class="themed-h2">Mot de passe modifié avec succès !</h2>
           </div>
-
+          <div class="login-body">
+            <p>
+              Vous pouvez maintenant vous connecter avec votre nouveau mot de
+              passe.
+            </p>
+          </div>
           <div class="login-footer">
             <button
               class="themed-button button-secondary"
@@ -221,50 +124,33 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, reactive } from 'vue'
+import { deriveKek, encryptCryptoKey } from '@/utils/crypto'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/services/api'
 
-// ==================== Router ====================
+const props = defineProps({
+  token: String,
+  mode: {
+    type: String,
+    default: 'set', // 'set' | 'reset'
+  },
+  cryptoKey: String,
+  kekSalt: String,
+})
+
+const emit = defineEmits(['switch', 'next'])
 const route = useRoute()
 const token = route.query.token
 
-// ==================== State ====================
 const step = ref('form')
 const password = ref('')
-const showPassword = ref(false)
 const confirmPassword = ref('')
+const showPassword = ref(false)
 const showConfirmPassword = ref(false)
 const isLoading = ref(false)
 const errorMessage = ref('')
 
-// ==================== Questions ====================
-const PRESET_QUESTIONS = [
-  'Quel est le nom de votre premier animal de compagnie ?',
-  'Quelle est la ville où vous êtes né(e) ?',
-  "Quel est le prénom de votre meilleur(e) ami(e) d'enfance ?",
-  'Quel est le nom de votre école primaire ?',
-  'Quel est le modèle de votre première voiture ?',
-  'Quel est le plat préféré de votre mère ?',
-  'Quel était le surnom de votre grand-père ?',
-  'Quelle est la rue où vous avez grandi ?',
-]
-
-const questions = reactive([
-  { selected: '', custom: '', answer: '' },
-  { selected: '', custom: '', answer: '' },
-  { selected: '', custom: '', answer: '' },
-])
-
-// Empêche de choisir la même question prédéfinie deux fois
-function availableQuestions(currentIndex) {
-  const selectedElsewhere = questions
-    .filter((q, i) => i !== currentIndex && q.selected !== '__custom__')
-    .map((q) => q.selected)
-  return PRESET_QUESTIONS.filter((q) => !selectedElsewhere.includes(q))
-}
-
-// ==================== Password Strength ====================
 const criteria = computed(() => ({
   length: password.value.length >= 8,
   upper: /[A-Z]/.test(password.value),
@@ -272,61 +158,37 @@ const criteria = computed(() => ({
   special: /[^A-Za-z0-9]/.test(password.value),
 }))
 
-// ==================== Lifecycle ====================
 onMounted(() => {
-  if (!token) {
-    errorMessage.value = 'Token manquant ou invalide'
-  }
+  if (!token) errorMessage.value = 'Token manquant ou invalide'
 })
 
-// ==================== Methods ====================
-function handleSubmit() {
+async function handleSubmit() {
   errorMessage.value = ''
 
+  // if (!Object.values(criteria.value).every(Boolean)) {
+  //   errorMessage.value = 'Le mot de passe ne respecte pas les critères'
+  //   return
+  // }
   if (password.value !== confirmPassword.value) {
     errorMessage.value = 'Les mots de passe ne correspondent pas'
     return
   }
 
-  step.value = 'questions'
-}
-
-async function handleQuestionsSubmit() {
-  errorMessage.value = ''
-
-  // Validation
-  for (let i = 0; i < questions.length; i++) {
-    const q = questions[i]
-    if (!q.selected) {
-      errorMessage.value = `Veuillez sélectionner une question pour le bloc ${i + 1}`
-      return
-    }
-    if (q.selected === '__custom__' && !q.custom.trim()) {
-      errorMessage.value = `Veuillez saisir votre question personnalisée (bloc ${i + 1})`
-      return
-    }
-    if (!q.answer.trim()) {
-      errorMessage.value = `Veuillez saisir une réponse pour la question ${i + 1}`
-      return
-    }
-  }
-
-  // Formatage final
-  const securityQuestions = questions.map((q) => ({
-    question: q.selected === '__custom__' ? q.custom.trim() : q.selected,
-    answer: q.answer.trim(),
-  }))
-
   isLoading.value = true
-
   try {
-    await api.post('/auth/activate', {
-      token,
-      password: password.value,
-      security_questions: securityQuestions,
-    })
+    if (props.mode === 'reset') {
+      const kek = await deriveKek(password.value, props.kekSalt)
+      const encrypted_crypto_key = await encryptCryptoKey(props.cryptoKey, kek)
 
-    step.value = 'done'
+      await api.put('/auth/password/reset', {
+        token: props.token,
+        encrypted_crypto_key,
+        password: password.value,
+      })
+      step.value = 'done'
+    } else {
+      emit('next', { token, password: password.value })
+    }
   } catch (error) {
     errorMessage.value =
       error.response?.data?.error || 'Une erreur est survenue'
