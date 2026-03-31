@@ -101,7 +101,7 @@
               <circle class="svg-circle" cx="26" cy="26" r="25" fill="none" />
               <path class="svg-check" fill="none" d="M14 27l7 7 16-16" />
             </svg>
-            <h2 class="themed-h2">Mot de passe modifié avec succès !</h2>
+            <h2 class="themed-h2">Mot de passe réinitialisé avec succès !</h2>
           </div>
           <div class="login-body">
             <p>
