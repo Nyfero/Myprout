@@ -1,7 +1,10 @@
 // routes/admin.ts
 import express from 'express'
 import prisma from '../prisma'
-import { sendPasswordSetupEmail, sendRejectionEmail } from '../services/email'
+import {
+  sendPasswordSetupEmail,
+  sendRejectionEmail,
+} from '../services/email/email'
 import { authMiddleware } from '../middlewares/authMiddleware'
 import { isAdmin } from '../middlewares/isAdmin'
 import { generateToken, hashToken } from '../utils/jwt'
@@ -47,12 +50,10 @@ router.post('/approve/:user_id', authMiddleware, isAdmin, async (req, res) => {
     })
   } catch (error) {
     console.error('Erreur mise à jour user :', error)
-    return res
-      .status(500)
-      .json({
-        message: 'Erreur lors de la validation du compte',
-        detail: error.message,
-      })
+    return res.status(500).json({
+      message: 'Erreur lors de la validation du compte',
+      detail: error.message,
+    })
   }
 
   try {

@@ -6,7 +6,7 @@ import {
   sendApprovalEmailToAdmin,
   sendPendingApprovalEmail,
   sendRecoveryMail,
-} from '../services/email'
+} from '../services/email/email'
 import { generateToken, verifyToken, hashToken } from '../utils/jwt'
 import { authMiddleware } from '../middlewares/authMiddleware'
 import {
