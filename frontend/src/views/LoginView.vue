@@ -1,7 +1,27 @@
 <template>
   <div class="login-container">
     <Transition :name="transitionName" mode="out-in">
-      <SetPassword v-if="showSetPassword" key="setPassword" @switch="goLogin" />
+      <Recovery
+        v-if="showRecovery"
+        key="recovery"
+        :token="pendingToken"
+        :password="pendingPassword"
+        :mode="recoveryMode"
+        @back="goPassword"
+        @switch="goLogin"
+        @verified="goPasswordReset"
+      />
+      <Password
+        v-else-if="showPassword"
+        key="password"
+        :token="pendingToken"
+        :mode="passwordMode"
+        :cryptoKey="pendingCryptoKey"
+        :kekSalt="pendingKekSalt"
+        @next="goRecovery"
+        @done="goLogin"
+        @switch="goLogin"
+      />
       <Login v-else-if="!showRegister" key="login" @switch="goRegister" />
       <Register v-else key="register" @switch="goLogin" />
     </Transition>
@@ -18,33 +38,81 @@ import {
 } from '@/components/background/composables/useDustDirection'
 import Login from '@/components/login/Login.vue'
 import Register from '@/components/login/Register.vue'
-import SetPassword from '@/components/login/SetPassword.vue'
+import Password from '@/components/login/Password.vue'
+import Recovery from '@/components/login/Recovery.vue'
 
 const showRegister = ref(false)
-const showSetPassword = ref(false)
+const showPassword = ref(false)
+const showRecovery = ref(false)
 const transitionName = ref('slide-left')
 const route = useRoute()
 
+const recoveryMode = ref('set') // 'set' | 'verify'
+const passwordMode = ref('set') // 'set' | 'reset'
+const pendingCryptoKey = ref('')
+const pendingKekSalt = ref('')
+
+// Données transmises de Password → Recovery
+const pendingToken = ref('')
+const pendingPassword = ref('')
+
 onMounted(() => {
   if (route.query.token) {
-    showSetPassword.value = true
+    const mode = route.query.mode // 'set' ou 'reset'
+    if (mode === 'reset') {
+      pendingToken.value = route.query.token
+      recoveryMode.value = 'verify'
+      showRecovery.value = true
+    } else {
+      showPassword.value = true
+    }
   }
 })
 
-async function goRegister() {
+function goRegister() {
   setDustDirection('left', true)
   setTimeout(resetDustBoost, 800)
   transitionName.value = 'slide-left'
   showRegister.value = true
 }
-async function goLogin() {
+
+function goLogin() {
   setDustDirection('right', true)
   setTimeout(resetDustBoost, 800)
   transitionName.value = 'slide-right'
   showRegister.value = false
-  if (showSetPassword.value == true) {
-    showSetPassword.value = false
-  }
+  showPassword.value = false
+  showRecovery.value = false
+  passwordMode.value = 'set'
+  pendingToken.value = ''
+  pendingPassword.value = ''
+  pendingCryptoKey.value = ''
+  pendingKekSalt.value = ''
+}
+
+function goPassword() {
+  transitionName.value = 'slide-right'
+  showRecovery.value = false
+  showPassword.value = true
+}
+
+function goPasswordReset({ token, cryptoKey, kekSalt }) {
+  pendingToken.value = token
+  pendingCryptoKey.value = cryptoKey
+  pendingKekSalt.value = kekSalt
+  passwordMode.value = 'reset'
+  transitionName.value = 'slide-left'
+  showRecovery.value = false
+  showPassword.value = true
+}
+
+function goRecovery({ token, password }) {
+  pendingToken.value = token
+  pendingPassword.value = password
+  recoveryMode.value = 'set'
+  transitionName.value = 'slide-left'
+  showPassword.value = false
+  showRecovery.value = true
 }
 </script>
 

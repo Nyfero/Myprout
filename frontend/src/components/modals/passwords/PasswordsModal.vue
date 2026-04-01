@@ -264,17 +264,6 @@ function handleKeydown(e) {
 </script>
 
 <style scoped>
-.char-counter {
-  font-size: 0.75rem;
-  color: #888;
-  text-align: right;
-  margin-top: 4px;
-  display: block;
-}
-.char-counter.near-limit {
-  color: #e74c3c;
-}
-
 .btn-edit {
   display: flex;
   align-items: center;

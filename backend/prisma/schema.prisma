@@ -16,7 +16,7 @@ datasource db {
 
 model users {
   user_id               Int       @id @default(autoincrement())
-  ip                    ipAddress[]
+  // ip                    ipAddress[] // useless for now
   passwords             passwords[]
   userRoles             userRoles[]
   firstName             String    @default("")
@@ -27,21 +27,25 @@ model users {
   token_hash            String?   @unique @db.VarChar(64)
   encrypted_crypto_key  String?   @db.Text
   kek_salt              String?   @db.VarChar(64)
+    // Timestamp
   created_at            DateTime  @default(now())
   updated_at            DateTime? @updatedAt
+    // Recovery
+  recovery_questions              Json?
+  recovery_encrypted_crypto_key   String?
 }
 
-model ipAddress {
-  ip_id           Int       @id @default(autoincrement())
-  user_id         Int
-  user            users     @relation(fields: [user_id], references: [user_id])
-  ip              String
-  created_at      DateTime  @default(now())
-  last_time_used  DateTime  @default(now())
-  type            String?    // Adresse ip de travail ou de domicile ?
-  country         String?    // Bloquer les ip d'autres pays ?
-  is_active       Boolean   @default(false)
-}
+// model ipAddress {
+//   ip_id           Int       @id @default(autoincrement())
+//   user_id         Int
+//   user            users     @relation(fields: [user_id], references: [user_id])
+//   ip              String
+//   created_at      DateTime  @default(now())
+//   last_time_used  DateTime  @default(now())
+//   type            String?    // Adresse ip de travail ou de domicile ?
+//   country         String?    // Bloquer les ip d'autres pays ?
+//   is_active       Boolean   @default(false)
+// }
 
 model passwords {
   password_id     Int       @id @default(autoincrement())

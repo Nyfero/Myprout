@@ -4,12 +4,10 @@
       <div :key="step">
         <!-- ==================== FORM ==================== -->
         <template v-if="step === 'form'">
-          <!-- Header -->
           <div class="login-header">
             <h2 class="themed-h2">Définir votre mot de passe</h2>
           </div>
 
-          <!-- Body -->
           <div class="login-body">
             <form @submit.prevent="handleSubmit">
               <div class="form-wrapper">
@@ -26,14 +24,13 @@
                     type="button"
                     @click="showPassword = !showPassword"
                   >
-                    <span class="material-icons">
-                      {{ showPassword ? 'visibility_off' : 'visibility' }}
-                    </span>
+                    <span class="material-icons">{{
+                      showPassword ? 'visibility_off' : 'visibility'
+                    }}</span>
                   </button>
                 </div>
               </div>
 
-              <!-- Critères -->
               <ul class="strength-criteria">
                 <li :class="criteria.length ? 'met' : 'unmet'">
                   <span class="criteria-icon">{{
@@ -75,24 +72,22 @@
                     type="button"
                     @click="showConfirmPassword = !showConfirmPassword"
                   >
-                    <span class="material-icons">
-                      {{
-                        showConfirmPassword ? 'visibility_off' : 'visibility'
-                      }}
-                    </span>
+                    <span class="material-icons">{{
+                      showConfirmPassword ? 'visibility_off' : 'visibility'
+                    }}</span>
                   </button>
                 </div>
               </div>
+
               <p v-if="errorMessage" class="form-error">{{ errorMessage }}</p>
 
-              <!-- Footer -->
               <div class="login-footer">
                 <button
                   class="themed-button button-primary"
                   type="submit"
                   :disabled="isLoading"
                 >
-                  {{ isLoading ? 'En cours...' : 'Valider' }}
+                  {{ isLoading ? 'En cours...' : 'Continuer' }}
                 </button>
               </div>
             </form>
@@ -101,16 +96,19 @@
 
         <!-- ==================== SUCCESS ==================== -->
         <template v-else-if="step === 'done'">
-          <!-- Header -->
           <div class="login-header">
             <svg class="svg" viewBox="0 0 52 52" stroke="#4bb543">
               <circle class="svg-circle" cx="26" cy="26" r="25" fill="none" />
               <path class="svg-check" fill="none" d="M14 27l7 7 16-16" />
             </svg>
-            <h2 class="themed-h2">Mot de passe défini avec succès !</h2>
+            <h2 class="themed-h2">Mot de passe réinitialisé avec succès !</h2>
           </div>
-
-          <!-- Footer -->
+          <div class="login-body">
+            <p>
+              Vous pouvez maintenant vous connecter avec votre nouveau mot de
+              passe.
+            </p>
+          </div>
           <div class="login-footer">
             <button
               class="themed-button button-secondary"
@@ -126,24 +124,33 @@
 </template>
 
 <script setup>
+import { deriveKek, encryptCryptoKey } from '@/utils/crypto'
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/services/api'
 
-// ==================== Router ====================
+const props = defineProps({
+  token: String,
+  mode: {
+    type: String,
+    default: 'set', // 'set' | 'reset'
+  },
+  cryptoKey: String,
+  kekSalt: String,
+})
+
+const emit = defineEmits(['switch', 'next'])
 const route = useRoute()
 const token = route.query.token
 
-// ==================== State ====================
 const step = ref('form')
 const password = ref('')
-const showPassword = ref(false)
 const confirmPassword = ref('')
+const showPassword = ref(false)
 const showConfirmPassword = ref(false)
 const isLoading = ref(false)
 const errorMessage = ref('')
 
-// ==================== Password Strength ====================
 const criteria = computed(() => ({
   length: password.value.length >= 8,
   upper: /[A-Z]/.test(password.value),
@@ -151,30 +158,37 @@ const criteria = computed(() => ({
   special: /[^A-Za-z0-9]/.test(password.value),
 }))
 
-// ==================== Lifecycle ====================
 onMounted(() => {
-  if (!token) {
-    errorMessage.value = 'Token manquant ou invalide'
-  }
+  if (!token) errorMessage.value = 'Token manquant ou invalide'
 })
 
-// ==================== Methods ====================
 async function handleSubmit() {
+  errorMessage.value = ''
+
+  // if (!Object.values(criteria.value).every(Boolean)) {
+  //   errorMessage.value = 'Le mot de passe ne respecte pas les critères'
+  //   return
+  // }
   if (password.value !== confirmPassword.value) {
     errorMessage.value = 'Les mots de passe ne correspondent pas'
     return
   }
 
   isLoading.value = true
-  errorMessage.value = ''
-
   try {
-    await api.post('/auth/activate', {
-      token,
-      password: password.value,
-    })
+    if (props.mode === 'reset') {
+      const kek = await deriveKek(password.value, props.kekSalt)
+      const encrypted_crypto_key = await encryptCryptoKey(props.cryptoKey, kek)
 
-    step.value = 'done'
+      await api.put('/auth/password/reset', {
+        token: props.token,
+        encrypted_crypto_key,
+        password: password.value,
+      })
+      step.value = 'done'
+    } else {
+      emit('next', { token, password: password.value })
+    }
   } catch (error) {
     errorMessage.value =
       error.response?.data?.error || 'Une erreur est survenue'
@@ -190,6 +204,12 @@ async function handleSubmit() {
   margin-bottom: 1.5em;
 }
 
+.login-subtitle {
+  font-size: 0.85em;
+  color: #aaa;
+  margin-top: 0.4em;
+}
+
 .login-body {
   display: flex;
   flex-direction: column;
@@ -201,6 +221,61 @@ async function handleSubmit() {
   flex-direction: column;
   gap: 0.6em;
   margin-top: 1em;
+}
+
+/* ==================== Question Block ==================== */
+.question-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+  padding: 1em;
+  border: 1px solid var(--border-color, #333);
+  border-radius: 8px;
+  margin-bottom: 0.8em;
+}
+
+.question-label {
+  font-size: 0.8em;
+  font-weight: 600;
+  color: #aaa;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.char-counter {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+}
+
+.themed-input {
+  padding-right: 3em;
+}
+
+/* ==================== Select ==================== */
+.themed-select-wrapper {
+  position: relative;
+}
+
+.themed-select {
+  width: 100%;
+  appearance: none;
+  background: var(--input-bg, #1e1e1e);
+  color: var(--text-color, #fff);
+  border: 1px solid var(--border-color, #444);
+  border-radius: 6px;
+  padding: 0.6em 2em 0.6em 0.8em;
+  font-size: 0.9em;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='%23aaa'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.7em center;
+}
+
+.themed-select:focus {
+  outline: none;
+  border-color: var(--primary-color, #646cff);
 }
 
 /* ==================== Criteria ==================== */
@@ -224,7 +299,6 @@ async function handleSubmit() {
 .strength-criteria li.met {
   color: #4bb543;
 }
-
 .strength-criteria li.unmet {
   color: #aaa;
 }

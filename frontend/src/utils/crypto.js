@@ -34,6 +34,24 @@ export const deriveKek = async (password, saltHex) => {
   )
 }
 
+// Chiffre la crypto_key avec le KEK
+export const encryptCryptoKey = async (cryptoKeyHex, kek) => {
+  const iv = crypto.getRandomValues(new Uint8Array(12))
+  const keyBytes = hexToBytes(cryptoKeyHex)
+
+  const encrypted = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    kek,
+    keyBytes
+  )
+
+  const encryptedBytes = new Uint8Array(encrypted)
+  const tag = encryptedBytes.slice(-16)
+  const ciphertext = encryptedBytes.slice(0, -16)
+
+  return [bytesToHex(iv), bytesToHex(tag), bytesToHex(ciphertext)].join(':')
+}
+
 // Déchiffrer la crypto_key avec la KEK
 export const decryptCryptoKey = async (encryptedPayload, kek) => {
   const [ivHex, tagHex, encryptedHex] = encryptedPayload.split(':')

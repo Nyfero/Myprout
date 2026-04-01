@@ -100,3 +100,20 @@ export async function sendRejectionEmail(user: any) {
     `
   )
 }
+
+export async function sendRecoveryMail(user: any, token: string) {
+  const resetLink = `${process.env.FRONTEND_URL}/login?token=${token}&mode=reset`
+
+  await sendEmail(
+    user.email,
+    'Réinitialisation de votre mot de passe',
+    `
+        <p>Bonjour ${user.firstName},</p>
+        <p>Vous avez demandé à réinitialiser votre mot de passe.</p>
+        <p>Cliquez sur le lien ci-dessous pour continuer :</p>
+        <a href="${resetLink}">Réinitialiser mon mot de passe</a>
+        <p>Ce lien est valable <strong>1 heure</strong>.</p>
+        <p>Si vous n'êtes pas à l'origine de cette demande, ignorez cet email.</p>
+      `
+  )
+}
