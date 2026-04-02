@@ -50,7 +50,7 @@
           font-weight: 600;
         "
       >
-        Bonjour {{ firstName || 'Toi' }},
+        Bonjour {{firstName}},
       </p>
 
       <p
@@ -77,15 +77,16 @@
           margin: 0 0 24px 0;
           line-height: 24px;
           font-weight: 600;
+          text-align: center;
         "
       >
-        ⚠️ Ce lien expire dans <strong>1 heure</strong> pour votre sécurité.
+        ⚠️ Ce lien expire dans <strong>1 heure</strong>.
       </p>
 
       <!-- CTA principal (violet + urgence) -->
       <div style="text-align: center; margin-bottom: 24px">
         <a
-          href="{{recoveryUrl}}"
+          href="{{recoveryURL}}"
           style="
             background-color: #c25fff;
             color: #fff;
@@ -118,7 +119,7 @@
 
       <hr style="margin: 24px 0; border: none; border-top: 1px solid #c25fff" />
 
-      <p style="font-size: 14px; color: #9ca3af; margin: 0">
+      <p style="font-size: 14px; color: #9ca3af; margin: 0; text-align: center">
         Notre équipe de support reste disponible si besoin.
       </p>
     </div>

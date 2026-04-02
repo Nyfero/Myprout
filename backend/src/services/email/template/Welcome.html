@@ -50,7 +50,7 @@
             font-weight: 600;
           "
         >
-          Bonjour ${props.firstName},
+          Bonjour {{firstName}},
         </p>
 
         <p
@@ -71,8 +71,7 @@
           <strong style="text-shadow: #c25fff">profitiez pleinement</strong>
           de notre plateforme ! <br />
           <br />
-          Pour commencer veuillez valider votre adresse e-mail afin de sécuriser
-          votre compte. <br />
+          Pour commencer veuillez valider votre adresse e-mail. <br />
           <br />
           Vous recevrez un e-mail une fois que l'administrateur aura approuvé
           votre inscription.<br />
@@ -81,7 +80,7 @@
         <!-- Bouton CTA -->
         <div style="text-align: center; margin-bottom: 24px">
           <a
-            href="${props.setupUrl}"
+            href="{{confirmMailRoute}}"
             style="
               background-color: #c25fff;
               color: #fff;
@@ -114,12 +113,11 @@
             color: #9ca3af;
             margin: 0 0 16px 0;
             line-height: 20px;
+            text-align: center;
           "
         >
-          Si vous avez des questions ou besoin d'assistance, notre équipe de
-          support composée d'une personne est là pour vous aider. Répondez
-          simplement à cet email ou rendez-vous dans la section dédiée une fois
-          connecté.
+          Si vous avez des questions ou besoin d'aide, répondez simplement à cet
+          email ou rendez-vous dans la section dédiée une fois connecté.
         </p>
       </div>
     </div>

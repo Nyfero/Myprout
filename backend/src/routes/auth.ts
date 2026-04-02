@@ -3,11 +3,16 @@ import express from 'express'
 import prisma from '../prisma'
 import bcrypt from 'bcrypt'
 import {
-  sendApprovalEmailToAdmin,
-  sendPendingApprovalEmail,
-  sendRecoveryMail,
+  sendConfirmEmailToUser,
+  sendRequestInscriptionToAdmin,
+  sendRecoveryToUser,
 } from '../services/email/email'
-import { generateToken, verifyToken, hashToken } from '../utils/jwt'
+import {
+  generateToken,
+  generateRandomToken,
+  verifyToken,
+  hashToken,
+} from '../utils/jwt'
 import { authMiddleware } from '../middlewares/authMiddleware'
 import {
   deriveKek,
@@ -22,17 +27,25 @@ const router = express.Router()
 // ─── REGISTER ────────────────────────────────────────────────────────────────
 router.post('/register', async (req, res) => {
   const { email, firstName, lastName } = req.body
-  console.log('0')
 
   if (!email || !firstName || !lastName) {
     return res.status(400).json({ error: 'Tous les champs sont requis' })
   }
 
   try {
-    const existingUser = await prisma.users.findUnique({ where: { email } })
-    if (existingUser) {
+    const existingVerifiedUser = await prisma.users.findFirst({
+      where: {
+        email,
+        is_email_verified: true,
+      },
+    })
+
+    if (existingVerifiedUser) {
       return res.status(409).json({ error: 'Cet email est déjà utilisé' })
     }
+
+    const verifyToken = generateRandomToken()
+    const token_hash = hashToken(verifyToken)
 
     const user = await prisma.users.create({
       data: {
@@ -40,19 +53,70 @@ router.post('/register', async (req, res) => {
         firstName,
         lastName,
         is_active: false,
+        is_email_verified: false,
+        token_hash,
       },
     })
-    await sendApprovalEmailToAdmin(user)
-    await sendPendingApprovalEmail(user)
+
+    await sendConfirmEmailToUser(user, verifyToken)
 
     res.status(201).json({
-      message: "Compte créé en attente de validation par l'administrateur.",
-      user: { user_id: user.user_id, email: user.email },
+      message:
+        "Pour valider l'inscription', merci de confirmer votre adresse email grâce à l'email qui vous a été envoyé.",
     })
   } catch (error) {
     res
       .status(500)
       .json({ error: 'Erreur serveur lors de la création du compte' })
+  }
+})
+
+// ─── VERIFY EMAIL ────────────────────────────────────────────────────────────
+router.post('/verify-email', async (req, res) => {
+  const { token } = req.body
+
+  if (!token) {
+    return res.status(400).json({ error: 'Token manquant' })
+  }
+
+  try {
+    const token_hash = hashToken(token)
+
+    const user = await prisma.users.findUnique({
+      where: { token_hash },
+    })
+
+    if (!user) {
+      return res.status(400).json({ error: 'Token invalide' })
+    }
+
+    if (user.is_email_verified) {
+      return res.status(400).json({ error: 'Email déjà vérifié' })
+    }
+
+    await prisma.users.update({
+      where: { user_id: user.user_id },
+      data: {
+        is_email_verified: true,
+        token_hash: null,
+      },
+    })
+
+    await prisma.users.deleteMany({
+      where: {
+        email: user.email,
+        is_email_verified: false,
+        user_id: { not: user.user_id },
+      },
+    })
+
+    await sendRequestInscriptionToAdmin(user)
+
+    res.json({
+      message: 'Email vérifié. En attente de validation par un administrateur.',
+    })
+  } catch (error) {
+    res.status(500).json({ error: 'Erreur serveur' })
   }
 })
 
@@ -153,7 +217,7 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Email et mot de passe requis' })
     }
 
-    const user = await prisma.users.findUnique({
+    const user = await prisma.users.findFirst({
       where: { email },
       include: {
         userRoles: {
@@ -166,6 +230,12 @@ router.post('/login', async (req, res) => {
 
     if (!user) {
       return res.status(401).json({ error: 'Email ou mot de passe incorrect' })
+    }
+
+    if (!user.is_email_verified) {
+      return res.status(403).json({
+        error: "Votre adresse mail n'est pas vérifié",
+      })
     }
 
     if (!user.is_active) {
@@ -291,7 +361,7 @@ router.post('/password/forgot', async (req, res) => {
   }
 
   try {
-    const user = await prisma.users.findUnique({ where: { email } })
+    const user = await prisma.users.findFirst({ where: { email } })
 
     if (!user || !user.is_active) {
       return res.status(200).json({ success: true })
@@ -310,7 +380,7 @@ router.post('/password/forgot', async (req, res) => {
       },
     })
 
-    await sendRecoveryMail(user, token)
+    await sendRecoveryToUser(user, token)
 
     return res.status(200).json({ success: true })
   } catch (error) {
@@ -345,6 +415,7 @@ router.put('/password/reset', async (req, res) => {
       data: {
         password_hash,
         encrypted_crypto_key,
+        token_hash: null,
       },
     })
 

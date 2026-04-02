@@ -64,7 +64,7 @@
               <circle class="svg-circle" cx="26" cy="26" r="25" fill="none" />
               <path class="svg-check" fill="none" d="M14 27l7 7 16-16" />
             </svg>
-            <h2 class="themed-h2">Inscription envoyée</h2>
+            <h2 class="themed-h2">Inscription enregistré</h2>
           </div>
 
           <!-- Body -->

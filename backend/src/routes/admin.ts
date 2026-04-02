@@ -2,8 +2,8 @@
 import express from 'express'
 import prisma from '../prisma'
 import {
-  sendPasswordSetupEmail,
-  sendRejectionEmail,
+  sendAccountSetupToUser,
+  sendRejectedToUser,
 } from '../services/email/email'
 import { authMiddleware } from '../middlewares/authMiddleware'
 import { isAdmin } from '../middlewares/isAdmin'
@@ -57,7 +57,7 @@ router.post('/approve/:user_id', authMiddleware, isAdmin, async (req, res) => {
   }
 
   try {
-    await sendPasswordSetupEmail(user, token)
+    await sendAccountSetupToUser(user, token)
   } catch (error) {
     console.error('Erreur envoi email setup mot de passe :', error)
   }
@@ -94,7 +94,7 @@ router.delete('/reject/:user_id', authMiddleware, isAdmin, async (req, res) => {
   }
 
   try {
-    await sendRejectionEmail(user)
+    await sendRejectedToUser(user)
   } catch (error) {
     console.error('Erreur envoi email rejet :', error)
   }

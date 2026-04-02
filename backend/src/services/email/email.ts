@@ -1,135 +1,125 @@
 // services/email.ts
-import nodemailer from 'nodemailer'
-import { Resend } from 'resend'
-import { readFile } from 'fs/promises'
-import path from 'path'
+import { sendEmail } from './utils/sendEmail'
+import { loadEmailTemplate, replaceVariables } from './utils/helper'
 
 const isProd = process.env.NODE_ENV === 'production'
 
-// ============ TRANSPORTERS ============
-
-let transporter: nodemailer.Transporter
-
-if (!isProd) {
-  const testAccount = await nodemailer.createTestAccount()
-  transporter = nodemailer.createTransport({
-    host: 'smtp.ethereal.email',
-    port: 587,
-    auth: {
-      user: testAccount.user,
-      pass: testAccount.pass,
-    },
-  })
-}
-
-const resend = isProd ? new Resend(process.env.RESEND_API_KEY) : null
-
-// ============ FONCTION GÉNÉRIQUE ============
-
-async function sendEmail(
-  to: string,
-  subject: string,
-  html: string,
-  templateId?: string,
-  templateVariables?: Record<string, any>
-) {
-  if (isProd && templateId && resend) {
-    await resend.emails.send({
-      from: 'myprout <noreply@myprout.fr>',
-      to,
-      subject,
-      template: {
-        id: templateId,
-        variables: templateVariables || {},
-      },
-    })
-  } else {
-    const info = await transporter.sendMail({
-      from: '"myprout" <noreply@myprout.fr>',
-      to,
-      subject,
-      html,
-    })
-    console.log('[EMAIL PREVIEW]', nodemailer.getTestMessageUrl(info))
-  }
-}
-
-// ============ EMAILS ============
-
-export async function sendApprovalEmailToAdmin(user: any) {
+// ADMIN
+export async function sendRequestInscriptionToAdmin(user: any) {
   const adminEmail = process.env.ADMIN_EMAIL!
   const adminPanelLink = `${process.env.FRONTEND_URL}/admin/users`
+  let title = "Demande d'inscription de " + user.firstName
 
-  await sendEmail(
-    adminEmail,
-    `Nouveau compte en attente de validation : ${user.email}`,
-    `
-      <p>Un nouvel utilisateur s'est inscrit et attend votre validation :</p>
-      <ul>
-        <li><strong>Nom</strong>: ${user.firstName} ${user.lastName}</li>
-        <li><strong>Email</strong>: ${user.email}</li>
-      </ul>
-      <p><a href="${adminPanelLink}">Accéder au panel d'administration</a></p>
-    `
-  )
+  let html = ''
+  let template = ''
+  let templateVariables = {}
+
+  if (isProd) {
+    template = 'new-user-registration-1'
+    templateVariables = {
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      date: user.created_at,
+      adminURL: adminPanelLink,
+    }
+  } else {
+    html = await loadEmailTemplate('Admin')
+
+    html = replaceVariables(html, {
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      date: user.created_at,
+      adminURL: adminPanelLink,
+    })
+  }
+
+  await sendEmail(adminEmail, title, html, template, templateVariables)
 }
 
-export async function sendPendingApprovalEmail(user: any) {
-  await sendEmail(
-    user.email,
-    'Votre demande de création compte est en attente de validation',
-    `
-      <p>Bonjour ${user.firstName},</p>
-      <p>Votre demande de création compte est en attente de validation par l'administrateur.</p>
-      <p>Vous recevrez un email une fois votre demande de compte validé pour définir votre mot de passe.</p>
-    `
-  )
+// WELCOME
+export async function sendConfirmEmailToUser(user: any, token: string) {
+  const confirmLink = `${process.env.FRONTEND_URL}/login?token=${token}&mode=email`
+  let title = 'Confirmer votre mot de passe'
+
+  let html = ''
+  let template = ''
+  let templateVariables = {}
+
+  if (isProd) {
+    template = 'welcome-email-1'
+    templateVariables = {
+      firstName: user.firstName,
+      confirmMailRoute: confirmLink,
+    }
+  } else {
+    html = await loadEmailTemplate('Welcome')
+
+    html = replaceVariables(html, {
+      firstName: user.firstName,
+      confirmMailRoute: confirmLink,
+    })
+  }
+
+  await sendEmail(user.email, title, html, template, templateVariables)
 }
 
-export async function sendPasswordSetupEmail(user: any, token: string) {
-  const passwordSetupLink = `${process.env.FRONTEND_URL}/login?token=${token}`
+// ACTIVATE
+export async function sendAccountSetupToUser(user: any, token: string) {
+  const passwordSetupLink = `${process.env.FRONTEND_URL}/login?token=${token}&mode=set`
+  let title = 'Définissez votre mot de passe'
 
-  await sendEmail(
-    user.email,
-    'Définissez votre mot de passe',
-    `
-      <p>Bonjour ${user.firstName},</p>
-      <p>Votre compte a été validé par l'administrateur. Vous pouvez maintenant définir votre mot de passe :</p>
-      <p><a href="${passwordSetupLink}">Définir mon mot de passe</a></p>
-      <p>Ce lien expire dans 1 semaine.</p>
-    `
-  )
+  let html = ''
+  let template = ''
+  let templateVariables = {}
+
+  if (isProd) {
+    template = 'account-verified'
+    templateVariables = {
+      firstName: user.firstName,
+      setupLinkURL: passwordSetupLink,
+    }
+  } else {
+    html = await loadEmailTemplate('Activate')
+
+    html = replaceVariables(html, {
+      firstName: user.firstName,
+      setupLinkURL: passwordSetupLink,
+    })
+  }
+
+  await sendEmail(user.email, title, html, template, templateVariables)
 }
 
-export async function sendRejectionEmail(user: any) {
-  await sendEmail(
-    user.email,
-    'Votre demande a été refusée',
-    `
-      <p>Bonjour ${user.firstName},</p>
-      <p>Votre demande de création compte a été refusée par l'administrateur.</p>
-    `
-  )
+// REFUSE
+export async function sendRejectedToUser(user: any) {
+  let title = 'Votre demande a été refusée'
+
+  let html = ''
+  let template = ''
+  let templateVariables = {}
+
+  if (isProd) {
+    template = 'account-rejected'
+    templateVariables = {
+      firstName: user.firstName,
+      contactURL: '',
+    }
+  } else {
+    html = await loadEmailTemplate('Refuse')
+
+    html = replaceVariables(html, {
+      firstName: user.firstName,
+      contactURL: '',
+    })
+  }
+
+  await sendEmail(user.email, title, html, template, templateVariables)
 }
 
-// export async function sendRecoveryMail(user: any, token: string) {
-//   const resetLink = `${process.env.FRONTEND_URL}/login?token=${token}&mode=reset`
-
-//   await sendEmail(
-//     user.email,
-//     'Réinitialisation de votre mot de passe',
-//     `
-//         <p>Bonjour ${user.firstName},</p>
-//         <p>Vous avez demandé à réinitialiser votre mot de passe.</p>
-//         <p>Cliquez sur le lien ci-dessous pour continuer :</p>
-//         <a href="${resetLink}">Réinitialiser mon mot de passe</a>
-//         <p>Ce lien est valable <strong>1 heure</strong>.</p>
-//         <p>Si vous n'êtes pas à l'origine de cette demande, ignorez cet email.</p>
-//       `
-//   )
-// }
-
-export async function sendRecoveryMail(user: any, token: string) {
+// RECOVERY
+export async function sendRecoveryToUser(user: any, token: string) {
   const resetUrl = `${process.env.FRONTEND_URL}/login?token=${token}&mode=reset`
   let title = 'Réinitialisez votre mot de passe (valable 1h)'
 
@@ -141,15 +131,15 @@ export async function sendRecoveryMail(user: any, token: string) {
     template = 'password-reset'
     templateVariables = {
       firstName: user.firstName,
-      recoveryUrl: resetUrl,
+      recoveryURL: resetUrl,
     }
   } else {
-    const templatePath = path.join(__dirname, 'template', 'Recovery.html')
-    html = await readFile(templatePath, 'utf-8')
+    html = await loadEmailTemplate('Recovery')
 
-    html = html
-      .replace('{{firstName}}', user.firstName)
-      .replace('{{recoveryUrl}}', resetUrl)
+    html = replaceVariables(html, {
+      firstName: user.firstName,
+      recoveryURL: resetUrl,
+    })
   }
 
   await sendEmail(user.email, title, html, template, templateVariables)

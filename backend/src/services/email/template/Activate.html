@@ -50,7 +50,7 @@
             font-weight: 600;
           "
         >
-          Bonjour ${props.firstName},
+          Bonjour {{firstName}},
         </p>
 
         <p
@@ -63,7 +63,7 @@
         >
           <strong>Votre compte a été validé par l'administrateur !</strong>
           <br />
-          Vous pouvez maintenant finaliser votre inscription.<br />
+          Vous pouvez maintenant terminer la création de votre compte.<br />
           <br />
           Il ne vous reste plus qu'à définir votre
           <strong>mot de passe</strong> et vos
@@ -79,14 +79,13 @@
           "
         >
           Cliquez sur le bouton ci-dessous pour accéder à votre page de
-          configuration sécurisée. Ce lien est
-          <strong> valide 7 jours </strong> (token unique généré pour vous).
+          configuration. Ce lien est<strong> valide 7 jours </strong>.
         </p>
 
         <!-- Bouton CTA -->
         <div style="text-align: center; margin-bottom: 24px">
           <a
-            href="${props.passwordSetupUrl}"
+            href="{{setupLinkURL}}"
             style="
               background-color: #c25fff;
               color: #fff;
@@ -113,12 +112,10 @@
             color: #9ca3af;
             margin: 0 0 16px 0;
             line-height: 20px;
+            text-align: center;
           "
         >
-          Si le bouton ne fonctionne pas, copiez ce lien :
-          ${props.passwordSetupUrl}<br />
-          Notre équipe de support (1 personne dédiée) reste disponible si
-          besoin.
+          Notre équipe de support reste disponible si besoin.
         </p>
       </div>
     </div>

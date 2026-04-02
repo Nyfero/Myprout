@@ -22,6 +22,12 @@
         @done="goLogin"
         @switch="goLogin"
       />
+      <VerifyEmail
+        v-else-if="showVerifyEmail"
+        key="verifyEmail"
+        :token="pendingToken"
+        @switch="goLogin"
+      />
       <Login v-else-if="!showRegister" key="login" @switch="goRegister" />
       <Register v-else key="register" @switch="goLogin" />
     </Transition>
@@ -40,10 +46,12 @@ import Login from '@/components/login/Login.vue'
 import Register from '@/components/login/Register.vue'
 import Password from '@/components/login/Password.vue'
 import Recovery from '@/components/login/Recovery.vue'
+import VerifyEmail from '@/components/login/VerifyEmail.vue'
 
 const showRegister = ref(false)
 const showPassword = ref(false)
 const showRecovery = ref(false)
+const showVerifyEmail = ref(false)
 const transitionName = ref('slide-left')
 const route = useRoute()
 
@@ -58,13 +66,15 @@ const pendingPassword = ref('')
 
 onMounted(() => {
   if (route.query.token) {
-    const mode = route.query.mode // 'set' ou 'reset'
+    const mode = route.query.mode // 'set' | 'reset' | 'email'
+    pendingToken.value = route.query.token
     if (mode === 'reset') {
-      pendingToken.value = route.query.token
       recoveryMode.value = 'verify'
       showRecovery.value = true
-    } else {
+    } else if (mode === 'set') {
       showPassword.value = true
+    } else {
+      showVerifyEmail.value = true
     }
   }
 })
@@ -83,6 +93,7 @@ function goLogin() {
   showRegister.value = false
   showPassword.value = false
   showRecovery.value = false
+  showVerifyEmail.value = false
   passwordMode.value = 'set'
   pendingToken.value = ''
   pendingPassword.value = ''

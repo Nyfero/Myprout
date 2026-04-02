@@ -192,7 +192,6 @@ const securityQuestions = ref([])
 
 onMounted(async () => {
   if (props.mode === 'verify') {
-    const loadedQuestions = []
     try {
       const response = await api.get(`/auth/recovery?token=${props.token}`)
       securityQuestions.value = response.data.questions.map((q) => ({
