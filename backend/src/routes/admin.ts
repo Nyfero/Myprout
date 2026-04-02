@@ -32,21 +32,31 @@ router.post('/approve/:user_id', authMiddleware, isAdmin, async (req, res) => {
   const token_hash = hashToken(token)
 
   try {
-    await prisma.users.update({
-      where: { user_id: user.user_id },
-      data: {
-        is_active: true,
-        token_hash,
-        userRoles: {
-          create: {
-            role: {
-              connect: {
-                role_id: 2,
+    await prisma.$transaction(async (tx) => {
+      await tx.users.update({
+        where: { user_id: user.user_id },
+        data: {
+          is_active: true,
+          userRoles: {
+            create: {
+              role: {
+                connect: {
+                  role_id: 2,
+                },
               },
             },
           },
         },
-      },
+      })
+
+      await tx.tokens.create({
+        data: {
+          user_id: user.user_id,
+          token_hash,
+          type: 'activate',
+          expires_at: new Date(Date.now() + 7 * 24 * 60 * 1000),
+        },
+      })
     })
   } catch (error) {
     console.error('Erreur mise à jour user :', error)

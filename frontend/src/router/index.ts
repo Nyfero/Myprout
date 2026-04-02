@@ -51,14 +51,6 @@ const router = createRouter({
 
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
-  const token = localStorage.getItem('token')
-  const user = localStorage.getItem('user')
-
-  if (token && user && !authStore.isAuthenticated) {
-    authStore.isAuthenticated = true
-    authStore.token = token
-    authStore.user = JSON.parse(user)
-  }
 
   const requiresAuth = to.meta.requiresAuth
 
@@ -66,12 +58,7 @@ router.beforeEach(async (to, from, next) => {
     return next({ name: 'Login' })
   }
 
-  if (
-    to.name === 'Password' &&
-    requiresAuth &&
-    authStore.isLocked &&
-    to.name !== 'Unlock'
-  ) {
+  if (requiresAuth && authStore.isLocked && to.name !== 'Unlock') {
     return next({ name: 'Unlock', query: { redirect: to.fullPath } })
   }
 

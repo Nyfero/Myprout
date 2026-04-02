@@ -150,7 +150,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
 import { useRouter } from 'vue-router'
 import { unlockCryptoKey } from '@/utils/crypto'
@@ -161,6 +161,7 @@ const step = ref('login') // 'login' | 'forgot' | 'email-sent'
 const showPassword = ref(false)
 const errorMessage = ref('')
 const isLoading = ref(false)
+const showForgot = ref('login')
 const forgotEmail = ref('')
 const forgotError = ref('')
 const forgotLoading = ref(false)
@@ -227,8 +228,9 @@ async function onSubmit() {
       user.encrypted_crypto_key
     )
     await authStore.login(user, token, crypto_key)
-    await router.push({ name: 'Password' })
     authStore.isLoggingIn = false
+    await nextTick()
+    await router.push({ name: 'Password' })
   } catch (error) {
     errorMessage.value =
       error.response?.data?.error ?? 'Erreur de connexion au serveur'

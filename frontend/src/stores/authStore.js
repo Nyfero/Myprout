@@ -20,6 +20,28 @@ export const useAuthStore = defineStore('auth', {
     },
   },
   actions: {
+    async initAuth() {
+      const hasSession = document.cookie.includes('hasSession=1')
+      if (!hasSession) {
+        this.isAuthenticated = false
+        return
+      }
+
+      try {
+        const { data } = await api.post(
+          '/auth/refresh',
+          {},
+          { withCredentials: true }
+        )
+        this.token = data.token
+        this.user = data.user
+        this.isAuthenticated = true
+      } catch {
+        this.isAuthenticated = false
+        this.token = null
+        this.user = null
+      }
+    },
     async unlockKey(password) {
       try {
         await api.post('/auth/password/verify', { password })
@@ -32,31 +54,39 @@ export const useAuthStore = defineStore('auth', {
         throw error
       }
     },
-    async login(userData, tokenData, cryptoKey) {
+    async login(userData, accessToken, cryptoKey) {
       this.isLoggingIn = true
       this.isAuthenticated = true
       this.user = userData
-      this.token = tokenData
+      this.token = accessToken
       this.crypto_key = cryptoKey
       localStorage.setItem('user', JSON.stringify(userData))
-      localStorage.setItem('token', tokenData)
     },
-    logout() {
+    async logout() {
+      try {
+        await api.post('/auth/logout')
+      } catch (_) {}
       this.isAuthenticated = false
       this.user = null
       this.token = null
       this.crypto_key = null
-      localStorage.removeItem('token')
       localStorage.removeItem('user')
     },
-    // Pour restaurer la session au rechargement de la page
-    initFromStorage() {
-      const token = localStorage.getItem('token')
+    async initFromStorage() {
       const user = localStorage.getItem('user')
-      if (token && user) {
+      if (!user) return
+
+      try {
+        const { data } = await api.post(
+          `/auth/refresh`,
+          {},
+          { withCredentials: true }
+        )
         this.isAuthenticated = true
-        this.token = token
+        this.token = data.token
         this.user = JSON.parse(user)
+      } catch (_) {
+        localStorage.removeItem('user')
       }
     },
   },

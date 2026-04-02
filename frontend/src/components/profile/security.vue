@@ -1,9 +1,8 @@
 <template>
- <h2 class="themed-h2">Sécurité</h2>
+  <h2 class="themed-h2">Sécurité</h2>
 
-      <div class="security-container">
-
-        <!-- <div class="security-item">
+  <div class="security-container">
+    <!-- <div class="security-item">
           <div class="security-item-info">
             <span class="material-icons security-icon">security</span>
             <div>
@@ -14,9 +13,9 @@
           <button class="themed-button button-primary">Activer</button>
         </div> -->
 
-        <!-- <div class="themed-separator" /> -->
+    <!-- <div class="themed-separator" /> -->
 
-        <!-- <div class="security-item">
+    <!-- <div class="security-item">
           <div class="security-item-info">
             <span class="material-icons security-icon">alternate_email</span>
             <div>
@@ -27,31 +26,31 @@
           <button class="themed-button button-secondary">Ajouter</button>
         </div> -->
 
-        <!-- <div class="themed-separator" /> -->
+    <!-- <div class="themed-separator" /> -->
 
-        <div class="security-item danger-item">
-          <div class="security-item-info flex-2">
-            <span class="material-icons security-icon danger-icon">delete_forever</span>
-            <div>
-              <p class="security-item-title danger-text">Supprimer le compte</p>
-              <p class="security-item-desc">Cette action est irréversible</p>
-            </div>
-          </div>
-          <button 
-            class="themed-button button-danger flex-1"
-            @click="openModal">
-            Supprimer
-          </button>
+    <div class="security-item danger-item">
+      <div class="security-item-info flex-2">
+        <span class="material-icons security-icon danger-icon"
+          >delete_forever</span
+        >
+        <div>
+          <p class="security-item-title danger-text">Supprimer le compte</p>
+          <p class="security-item-desc">Cette action est irréversible</p>
         </div>
       </div>
+      <button class="themed-button button-danger flex-1" @click="openModal">
+        Supprimer
+      </button>
+    </div>
+  </div>
 
-      <deleteAccountModal
-        v-if="showDeleteAccountModal"
-        :loading="formLoading"
-        :error="formError"
-        @close="closeModal"
-        @submit="handleDeleteAccount"
-      />
+  <deleteAccountModal
+    v-if="showDeleteAccountModal"
+    :loading="formLoading"
+    :error="formError"
+    @close="closeModal"
+    @submit="handleDeleteAccount"
+  />
 </template>
 
 <script setup>
@@ -73,7 +72,7 @@ function closeModal() {
   showDeleteAccountModal.value = false
 }
 
-async function handleDeleteAccount(password) { 
+async function handleDeleteAccount(password) {
   formLoading.value = true
   formError.value = ''
 
@@ -81,7 +80,6 @@ async function handleDeleteAccount(password) {
     await deleteAccount(password)
     logout()
   } catch (e) {
-    console.log(e.response)
     formError.value = e.response?.data?.error || 'Une erreur est survenue'
   } finally {
     formLoading.value = false

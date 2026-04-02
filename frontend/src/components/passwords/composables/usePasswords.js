@@ -7,7 +7,7 @@ import api from '@/services/api'
 export function usePasswords() {
   const authStore = useAuthStore()
   const passwordsList = ref([])
-  const loading = ref(false)
+  const loading = ref(true)
   const search = ref('')
   const visiblePasswords = ref({}) // { password_id: decryptedText }
   const icons = ref({})
@@ -175,8 +175,6 @@ export function usePasswords() {
     if (!authStore.crypto_key) throw new Error('Clé crypto absente')
     return await decryptPassword(encryptedPassword, authStore.crypto_key)
   }
-
-  onMounted(fetchPasswordsList)
 
   return {
     passwordsList,

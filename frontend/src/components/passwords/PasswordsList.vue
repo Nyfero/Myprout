@@ -75,7 +75,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { usePasswords } from './composables/usePasswords'
 import { useAuthStore } from '@/stores/authStore'
 import { decryptPassword } from '@/utils/crypto'
@@ -103,7 +103,10 @@ const {
   createPassword,
   updatePassword,
   deletePassword,
+  fetchPasswordsList,
 } = usePasswords()
+
+onMounted(fetchPasswordsList)
 
 // --- Scroll ---
 const scrollToLetter = (letter) => {

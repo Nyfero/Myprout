@@ -12,12 +12,8 @@ export function generateToken(payload: object, expiresIn: string): string {
 }
 
 export function verifyToken(token: string) {
-  try {
-    const publicKey = fs.readFileSync(process.env.JWT_PUBLIC_KEY_PATH as string)
-    return jwt.verify(token, publicKey, { algorithms: ['RS256'] })
-  } catch (err) {
-    return null
-  }
+  const publicKey = fs.readFileSync(process.env.JWT_PUBLIC_KEY_PATH as string)
+  return jwt.verify(token, publicKey, { algorithms: ['RS256'] })
 }
 
 export function generateRandomToken(): string {

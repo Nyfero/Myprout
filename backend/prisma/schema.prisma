@@ -16,9 +16,11 @@ datasource db {
 
 model users {
   user_id               Int       @id @default(autoincrement())
-  // ip                    ipAddress[] // useless for now
+    // Link to other tables
   passwords             passwords[]
   userRoles             userRoles[]
+  tokens                tokens[]
+  // ip                    ipAddress[] // useless for now
     // User data
   firstName             String    @default("")
   lastName              String    @default("")
@@ -27,7 +29,6 @@ model users {
     // User activation
   is_active             Boolean   @default(false)
   is_email_verified     Boolean   @default(false)
-  token_hash            String?   @unique @db.VarChar(64)
     // Crypto_key
   encrypted_crypto_key  String?   @db.Text
   kek_salt              String?   @db.VarChar(64)
@@ -40,6 +41,16 @@ model users {
 
     // Apply unique to email if email is verified
   @@index([email, is_email_verified])
+}
+
+model tokens {
+  token_id   Int      @id @default(autoincrement())
+  user_id    Int
+  token_hash String   @unique
+  type       String   // 'email_verification' | 'password_reset' | 'activate' | 'login' | 'refresh_token'
+  expires_at DateTime?  // nullable car verify email n'a pas forcément d'expiration
+  created_at DateTime @default(now())
+  user       users    @relation(fields: [user_id], references: [user_id])
 }
 
 // model ipAddress {

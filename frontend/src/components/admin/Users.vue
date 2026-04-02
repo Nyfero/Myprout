@@ -11,20 +11,24 @@
     <div v-else class="users-list">
       <div v-for="user in pendingUsers" :key="user.user_id" class="user-card">
         <div class="user-info">
-          <span class="user-name">{{ user.firstName }} {{ user.lastName }}</span>
+          <span class="user-name"
+            >{{ user.firstName }} {{ user.lastName }}</span
+          >
           <span class="user-email">{{ user.email }}</span>
-          <span class="user-date">Inscrit le {{ formatDate(user.created_at) }}</span>
+          <span class="user-date"
+            >Inscrit le {{ formatDate(user.created_at) }}</span
+          >
         </div>
         <div class="user-actions">
-          <button 
-            class="btn-approve" 
+          <button
+            class="btn-approve"
             @click="approveUser(user)"
             :disabled="loadingAction === user.user_id"
           >
             ✅ Valider
           </button>
-          <button 
-            class="btn-reject" 
+          <button
+            class="btn-reject"
             @click="rejectUser(user)"
             :disabled="loadingAction === user.user_id"
           >
@@ -52,13 +56,11 @@ async function fetchPendingUsers() {
   loading.value = true
   const token = localStorage.getItem('token')
   try {
-    const { data } = await api.get('/admin/pending-users',
-    {
+    const { data } = await api.get('/admin/pending-users', {
       headers: {
-        Authorization: `Bearer ${token}`
-      }
+        Authorization: `Bearer ${token}`,
+      },
     })
-    console.log('Utilisateurs reçus :', data) // ✅ Pour vérifier la structure
     pendingUsers.value = data
   } catch (error) {
     console.error('Erreur lors du chargement des utilisateurs', error)
@@ -72,7 +74,9 @@ async function approveUser(user) {
   loadingAction.value = user.user_id
   try {
     await api.post(`/admin/approve/${user.user_id}`)
-    pendingUsers.value = pendingUsers.value.filter(u => u.user_id !== user.user_id)
+    pendingUsers.value = pendingUsers.value.filter(
+      (u) => u.user_id !== user.user_id
+    )
   } catch (error) {
     console.error('Erreur lors de la validation', error)
   } finally {
@@ -85,7 +89,9 @@ async function rejectUser(user) {
   loadingAction.value = user.user_id
   try {
     await api.delete(`/admin/reject/${user.user_id}`)
-    pendingUsers.value = pendingUsers.value.filter(u => u.user_id !== user.user_id)
+    pendingUsers.value = pendingUsers.value.filter(
+      (u) => u.user_id !== user.user_id
+    )
   } catch (error) {
     console.error('Erreur lors du refus', error)
   } finally {
@@ -95,11 +101,12 @@ async function rejectUser(user) {
 
 function formatDate(date) {
   return new Date(date).toLocaleDateString('fr-FR', {
-    day: '2-digit', month: '2-digit', year: 'numeric'
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
   })
 }
 </script>
-
 
 <style scoped>
 .admin-users {

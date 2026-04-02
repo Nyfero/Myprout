@@ -1,17 +1,20 @@
 <template>
-  <div v-if="authStore.isLoggingIn" :class="{ 'loading-container': authStore.isLoggingIn }">
+  <div
+    v-show="authStore.isLoggingIn"
+    :class="{ 'loading-container': authStore.isLoggingIn }"
+  >
     <span class="material-icons spinning">lock_open</span>
     <p>Déchiffrement en cours...</p>
   </div>
 
-  <div v-else class="themed-card passwords-page">
+  <div v-show="!authStore.isLoggingIn" class="themed-card passwords-page">
     <PasswordsList />
   </div>
 </template>
 
 <script setup>
 import { useAuthStore } from '@/stores/authStore'
-import PasswordsList from '@/components/passwords/PasswordsList.vue';
+import PasswordsList from '@/components/passwords/PasswordsList.vue'
 
 const authStore = useAuthStore()
 </script>
@@ -38,7 +41,11 @@ const authStore = useAuthStore()
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

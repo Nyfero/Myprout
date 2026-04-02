@@ -1,19 +1,87 @@
 // src/services/api.js
 import axios from 'axios'
-import { ref } from 'vue'
+import { useAuthStore } from '@/stores/authStore'
+import router from '@/router'
 
 const api = axios.create({
   baseURL: 'http://localhost:3000/api',
+  withCredentials: true,
   // baseURL: 'https://votre-backend.com/api', // Pour la prod
 })
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token')
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
+  const authStore = useAuthStore()
+  if (authStore.token) {
+    config.headers.Authorization = `Bearer ${authStore.token}`
   }
   return config
 })
+
+let isRefreshing = false
+let failedQueue = []
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) prom.reject(error)
+    else prom.resolve(token)
+  })
+  failedQueue = []
+}
+
+api.interceptors.response.use(
+  (res) => res,
+  async (error) => {
+    const originalRequest = error.config
+
+    if (
+      originalRequest.url.includes('/auth/refresh') ||
+      originalRequest.url.includes('/auth/login')
+    ) {
+      return Promise.reject(error)
+    }
+
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject })
+        })
+          .then((token) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`
+            return api(originalRequest)
+          })
+          .catch((err) => Promise.reject(err))
+      }
+
+      originalRequest._retry = true
+      isRefreshing = true
+
+      try {
+        const authStore = useAuthStore()
+        const { data } = await api.post(
+          `/auth/refresh`,
+          {},
+          { withCredentials: true }
+        )
+
+        authStore.token = data.accessToken
+        localStorage.setItem('token', data.accessToken)
+        processQueue(null, data.accessToken)
+        originalRequest.headers.Authorization = `Bearer ${data.accessToken}`
+        return api(originalRequest)
+      } catch (err) {
+        processQueue(err, null)
+        const authStore = useAuthStore()
+        authStore.logout()
+        router.push('/login')
+        return Promise.reject(err)
+      } finally {
+        isRefreshing = false
+      }
+    }
+
+    return Promise.reject(error)
+  }
+)
 
 export default api
 
