@@ -350,7 +350,12 @@ router.post('/logout', async (req, res) => {
 
   if (refreshToken) {
     const token_hash = hashToken(refreshToken)
-    await prisma.tokens.deleteMany({ where: { token_hash } })
+
+    const tokenInDb = await prisma.tokens.findFirst({ where: { token_hash } })
+
+    if (tokenInDb) {
+      await prisma.tokens.deleteMany({ where: { user_id: tokenInDb.user_id } })
+    }
   }
 
   res.clearCookie('refreshToken')
@@ -390,6 +395,10 @@ router.post('/refresh', async (req, res) => {
 
     const newRefreshToken = generateRandomToken()
     const newTokenHash = hashToken(newRefreshToken)
+
+    await prisma.tokens.deleteMany({
+      where: { user_id: user.user_id, type: 'access' },
+    })
 
     await prisma.tokens.update({
       where: { token_hash },

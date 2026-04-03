@@ -16,8 +16,7 @@ watchEffect(() => {
   currentPage.value = route.path
 })
 
-onMounted(async () => {
-  await authStore.initAuth()
+onMounted(() => {
   if (authStore.isAuthenticated) start()
 })
 

@@ -63,15 +63,14 @@ api.interceptors.response.use(
           { withCredentials: true }
         )
 
-        authStore.token = data.accessToken
-        localStorage.setItem('token', data.accessToken)
-        processQueue(null, data.accessToken)
-        originalRequest.headers.Authorization = `Bearer ${data.accessToken}`
+        authStore.token = data.token
+        processQueue(null, data.token)
+        originalRequest.headers.Authorization = `Bearer ${data.token}`
         return api(originalRequest)
       } catch (err) {
         processQueue(err, null)
         const authStore = useAuthStore()
-        authStore.logout()
+        await authStore.logout()
         router.push('/login')
         return Promise.reject(err)
       } finally {

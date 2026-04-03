@@ -61,17 +61,22 @@ export function usePasswords() {
 
   const loadIcon = async (title) => {
     const domain = extractDomain(title)
-    if (!domain || !isValidDomain(domain)) {
-      icons.value[title] = null
-      return
-    }
+    if (!domain || !isValidDomain(domain)) return
+
+    if (domain in icons.value) return
+
     try {
-      const { data } = await api.get(`/passwords/logo?domain=${domain}`, {
-        responseType: 'blob',
-      })
-      icons.value[title] = URL.createObjectURL(data)
+      const response = await fetch(
+        `http://localhost:3000/api/passwords/logo?domain=${domain}`
+      )
+      if (!response.ok) {
+        icons.value[domain] = null
+        return
+      }
+      const blob = await response.blob()
+      icons.value[domain] = URL.createObjectURL(blob)
     } catch {
-      icons.value[title] = null
+      icons.value[domain] = null
     }
   }
 
@@ -79,7 +84,8 @@ export function usePasswords() {
     filteredPasswords,
     (list) => {
       list.forEach((p) => {
-        if (!(p.title in icons.value)) loadIcon(p.title)
+        const domain = extractDomain(p.title)
+        if (domain && !(domain in icons.value)) loadIcon(p.title)
       })
     },
     { immediate: true }

@@ -79,7 +79,7 @@ router.patch('/:id/is_stared', authMiddleware, async (req, res) => {
   }
 })
 
-router.get('/logo', authMiddleware, async (req, res) => {
+router.get('/logo', async (req, res) => {
   const { domain } = req.query
 
   try {

@@ -8,9 +8,5 @@ const app = createApp(App)
 const pinia = createPinia()
 app.use(pinia)
 
-import { useAuthStore } from '@/stores/authStore'
-const auth = useAuthStore()
-auth.initFromStorage()
-
 app.use(router)
 app.mount('#app')

@@ -72,22 +72,5 @@ export const useAuthStore = defineStore('auth', {
       this.crypto_key = null
       localStorage.removeItem('user')
     },
-    async initFromStorage() {
-      const user = localStorage.getItem('user')
-      if (!user) return
-
-      try {
-        const { data } = await api.post(
-          `/auth/refresh`,
-          {},
-          { withCredentials: true }
-        )
-        this.isAuthenticated = true
-        this.token = data.token
-        this.user = JSON.parse(user)
-      } catch (_) {
-        localStorage.removeItem('user')
-      }
-    },
   },
 })
