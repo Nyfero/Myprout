@@ -121,21 +121,21 @@ router.post('/verify-email', async (req, res) => {
         where: { token_id: tokenRecord.token_id },
       })
 
-      await tx.users.deleteMany({
+      const usersToDelete = await tx.users.findMany({
         where: {
           email: user.email,
           is_email_verified: false,
           user_id: { not: user.user_id },
         },
+        select: { user_id: true },
       })
-    })
 
-    await prisma.users.deleteMany({
-      where: {
-        email: user.email,
-        is_email_verified: false,
-        user_id: { not: user.user_id },
-      },
+      const ids = usersToDelete.map(u => u.user_id)
+
+      if (ids.length > 0) {
+        await tx.tokens.deleteMany({ where: { user_id: { in: ids } } })
+        await tx.users.deleteMany({ where: { user_id: { in: ids } } })
+      }
     })
 
     await sendRequestInscriptionToAdmin(user)

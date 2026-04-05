@@ -125,6 +125,7 @@ async function register() {
       lastName: form.value.lastName,
       email: form.value.email,
     })
+
     successMessage.value = response.data.message
     form.value = { firstName: '', lastName: '', email: '' }
     submitted.value = true

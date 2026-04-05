@@ -4,7 +4,7 @@ import cors from 'cors'
 
 const app = express()
 
-const allowedOrigins = ['http://localhost:5173', 'https://myprout.fr']
+const allowedOrigins = ['http://localhost:5173', 'http://localhost:3000', 'https://myprout.fr']
 
 app.use(
   cors({

@@ -39,8 +39,6 @@ export const authMiddleware = async (
       return res.status(401).json({ error: 'Token invalide' })
     }
 
-    console.log('token :', JSON.stringify(decoded))
-
     const tokenHash = hashToken(token)
     const tokenInDb = await prisma.tokens.findFirst({
       where: {
