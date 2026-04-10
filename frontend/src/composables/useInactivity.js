@@ -1,12 +1,11 @@
 import { useAuthStore } from '@/stores/authStore'
-import { useRouter } from 'vue-router'
+import router from '@/router'
 
 export function useInactivity(timeout = 20 * 60 * 1000) {
   const authStore = useAuthStore()
-  const router = useRouter()
   let timer = null
 
-  const reset = async () => {
+  const reset = () => {
     clearTimeout(timer)
     timer = setTimeout(async () => {
       await authStore.logout()
@@ -14,14 +13,14 @@ export function useInactivity(timeout = 20 * 60 * 1000) {
     }, timeout)
   }
 
-  const start = async () => {
-    const events = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart']
+  const events = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart']
+
+  const start = () => {
     events.forEach((e) => window.addEventListener(e, reset))
-    await reset()
+    reset()
   }
 
   const stop = () => {
-    const events = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart']
     events.forEach((e) => window.removeEventListener(e, reset))
     clearTimeout(timer)
   }

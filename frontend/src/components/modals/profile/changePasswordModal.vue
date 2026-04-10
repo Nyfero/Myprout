@@ -1,6 +1,5 @@
 <template>
   <BaseModal @close="$emit('close')">
-
     <!-- Header -->
     <template #header>
       <div class="modal-header-empty" />
@@ -18,7 +17,6 @@
 
     <!-- Body -->
     <div class="modal-form">
-
       <!-- Ancien mot de passe -->
       <div class="form-group">
         <label class="themed-label">Ancien mot de passe</label>
@@ -31,8 +29,14 @@
             required
           />
           <div class="input-actions">
-            <button class="toggle-password" @click="showOld = !showOld" tabindex="-1">
-              <span class="material-icons">{{ showOld ? 'visibility_off' : 'visibility' }}</span>
+            <button
+              class="toggle-password"
+              @click="showOld = !showOld"
+              tabindex="-1"
+            >
+              <span class="material-icons">{{
+                showOld ? 'visibility_off' : 'visibility'
+              }}</span>
             </button>
           </div>
         </div>
@@ -52,17 +56,16 @@
             required
           />
           <div class="input-actions">
-            <button class="toggle-password" @click="showNew = !showNew" tabindex="-1">
-              <span class="material-icons">{{ showNew ? 'visibility_off' : 'visibility' }}</span>
+            <button
+              class="toggle-password"
+              @click="showNew = !showNew"
+              tabindex="-1"
+            >
+              <span class="material-icons">{{
+                showNew ? 'visibility_off' : 'visibility'
+              }}</span>
             </button>
           </div>
-        </div>
-        <!-- Indicateur de force -->
-        <div v-if="form.newPassword" class="password-strength">
-          <div class="strength-bar">
-            <div class="strength-fill" :class="strength.class" :style="{ width: strength.percent + '%' }" />
-          </div>
-          <span class="strength-label" :class="strength.class">{{ strength.label }}</span>
         </div>
       </div>
 
@@ -79,19 +82,49 @@
             required
           />
           <div class="input-actions">
-            <button class="toggle-password" @click="showConfirm = !showConfirm" tabindex="-1">
-              <span class="material-icons">{{ showConfirm ? 'visibility_off' : 'visibility' }}</span>
+            <button
+              class="toggle-password"
+              @click="showConfirm = !showConfirm"
+              tabindex="-1"
+            >
+              <span class="material-icons">{{
+                showConfirm ? 'visibility_off' : 'visibility'
+              }}</span>
             </button>
           </div>
         </div>
-        <span v-if="form.confirmPassword && !passwordsMatch" class="field-error">
+
+        <!-- Indicateur de force -->
+        <ul class="strength-criteria">
+          <li :class="criteria.length ? 'met' : 'unmet'">
+            <span class="criteria-icon">{{ criteria.length ? '✓' : '✗' }}</span>
+            8 caractères minimum
+          </li>
+          <li :class="criteria.upper ? 'met' : 'unmet'">
+            <span class="criteria-icon">{{ criteria.upper ? '✓' : '✗' }}</span>
+            Une lettre majuscule
+          </li>
+          <li :class="criteria.number ? 'met' : 'unmet'">
+            <span class="criteria-icon">{{ criteria.number ? '✓' : '✗' }}</span>
+            Un chiffre
+          </li>
+          <li :class="criteria.special ? 'met' : 'unmet'">
+            <span class="criteria-icon">{{
+              criteria.special ? '✓' : '✗'
+            }}</span>
+            Un caractère spécial (!@#$%...)
+          </li>
+        </ul>
+        <span
+          v-if="form.confirmPassword && !passwordsMatch"
+          class="field-error"
+        >
           Les mots de passe ne correspondent pas
         </span>
       </div>
 
       <!-- Erreur globale -->
       <p v-if="error" class="form-error">{{ error }}</p>
-
     </div>
 
     <!-- Footer -->
@@ -111,7 +144,6 @@
         </button>
       </div>
     </template>
-
   </BaseModal>
 </template>
 
@@ -121,7 +153,7 @@ import BaseModal from '@/components/ui/BaseModal.vue'
 
 const props = defineProps({
   loading: { type: Boolean, default: false },
-  error:   { type: String,  default: '' }
+  error: { type: String, default: '' },
 })
 
 const emit = defineEmits(['close', 'submit'])
@@ -129,17 +161,24 @@ const emit = defineEmits(['close', 'submit'])
 const form = ref({
   oldPassword: '',
   newPassword: '',
-  confirmPassword: ''
+  confirmPassword: '',
 })
 
-const showOld     = ref(false)
-const showNew     = ref(false)
+const showOld = ref(false)
+const showNew = ref(false)
 const showConfirm = ref(false)
 
 // Correspondance des mots de passe
-const passwordsMatch = computed(() =>
-  form.value.newPassword === form.value.confirmPassword
+const passwordsMatch = computed(
+  () => form.value.newPassword === form.value.confirmPassword
 )
+
+const criteria = computed(() => ({
+  length: form.value.newPassword.length >= 8,
+  upper: /[A-Z]/.test(form.value.newPassword),
+  number: /[0-9]/.test(form.value.newPassword),
+  special: /[^A-Za-z0-9]/.test(form.value.newPassword),
+}))
 
 // Indicateur de force
 const strength = computed(() => {
@@ -147,67 +186,80 @@ const strength = computed(() => {
   if (!p) return { label: '', class: '', percent: 0 }
 
   let score = 0
-  if (p.length >= 8)                    score++
-  if (p.length >= 12)                   score++
-  if (/[A-Z]/.test(p))                  score++
-  if (/[0-9]/.test(p))                  score++
-  if (/[^A-Za-z0-9]/.test(p))           score++
+  if (p.length >= 8) score++
+  if (p.length >= 12) score++
+  if (/[A-Z]/.test(p)) score++
+  if (/[0-9]/.test(p)) score++
+  if (/[^A-Za-z0-9]/.test(p)) score++
 
-  if (score <= 2) return { label: 'Faible',  class: 'weak',   percent: 33  }
-  if (score <= 3) return { label: 'Moyen',   class: 'medium', percent: 66  }
-                  return { label: 'Fort',    class: 'strong', percent: 100 }
+  if (score <= 2) return { label: 'Faible', class: 'weak', percent: 33 }
+  if (score <= 3) return { label: 'Moyen', class: 'medium', percent: 66 }
+  return { label: 'Fort', class: 'strong', percent: 100 }
 })
 
 // Validation globale
-const isFormValid = computed(() =>
-  form.value.oldPassword.trim() &&
-  form.value.newPassword.trim() &&
-  passwordsMatch.value
+const isFormValid = computed(
+  () =>
+    form.value.oldPassword.trim() &&
+    form.value.newPassword.trim() &&
+    passwordsMatch.value
 )
 
 const handleSubmit = () => {
   if (!isFormValid.value) return
   emit('submit', {
     oldPassword: form.value.oldPassword,
-    newPassword: form.value.newPassword
+    newPassword: form.value.newPassword,
   })
 }
 </script>
 
 <style scoped>
-
 /* Erreurs */
-.field-error { font-size: 0.78rem; color: #ff5555; margin-top: 2px; }
-.form-error  { font-size: 0.85rem; color: #ff5555; text-align: center; }
+.field-error {
+  font-size: 0.78rem;
+  color: #ff5555;
+  margin-top: 2px;
+}
+.form-error {
+  font-size: 0.85rem;
+  color: #ff5555;
+  text-align: center;
+}
 
-.input-error { border-color: #ff5555 !important; }
+.input-error {
+  border-color: #ff5555 !important;
+}
 
-/* Indicateur de force */
-.password-strength {
+/* ==================== Criteria ==================== */
+.strength-criteria {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.strength-criteria li {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  margin-top: 4px;
+  gap: 0.5em;
+  font-size: 0.8em;
+  transition: color 0.3s ease;
 }
 
-.strength-bar {
-  flex: 1;
-  height: 4px;
-  background: #333;
-  border-radius: 2px;
-  overflow: hidden;
+.strength-criteria li.met {
+  color: #4bb543;
+}
+.strength-criteria li.unmet {
+  color: #aaa;
 }
 
-.strength-fill {
-  height: 100%;
-  border-radius: 2px;
-  transition: width 0.3s ease, background 0.3s ease;
+.criteria-icon {
+  font-size: 0.9em;
+  font-weight: 700;
+  width: 14px;
+  text-align: center;
 }
-
-.strength-label { font-size: 0.78rem; min-width: 40px;}
-
-/* Classes de force */
-.weak   { background: #ff5555; color: #ff5555; }
-.medium { background: #f0a500; color: #f0a500; }
-.strong { background: #2ecc71; color: #2ecc71; }
 </style>

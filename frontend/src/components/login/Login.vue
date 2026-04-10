@@ -121,7 +121,7 @@
           <!-- Body -->
           <div class="login-body">
             <p>
-              Un email de réinitialisation va être envoyé dans quelque instant à
+              Un email de réinitialisation va être envoyé dans quelques instants à
               :
             </p>
             <button v-if="mailboxUrl" class="themed-button button-primary">

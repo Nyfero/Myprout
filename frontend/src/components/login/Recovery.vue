@@ -199,7 +199,7 @@ onMounted(async () => {
         answer: '',
       }))
     } catch (error) {
-      errorMessage.value = 'Token invalide ou expiré.'
+      errorMessage.value = 'Token invalide ou expiré'
     }
   }
 })

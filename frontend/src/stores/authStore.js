@@ -20,9 +20,8 @@ export const useAuthStore = defineStore('auth', {
     },
   },
   actions: {
-    async initAuth() {
-      const hasSession = document.cookie.includes('hasSession=1')
-      if (!hasSession) {
+    async initAuth(routeName = null) {
+      if (routeName === 'Login') {
         this.isAuthenticated = false
         return
       }
@@ -43,18 +42,14 @@ export const useAuthStore = defineStore('auth', {
       }
     },
     async unlockKey(password) {
-      try {
-        await api.post('/auth/password/verify', { password })
-        this.crypto_key = await unlockCryptoKey(
-          password,
-          this.user.kek_salt,
-          this.user.encrypted_crypto_key
-        )
-      } catch (error) {
-        throw error
-      }
+      await api.post('/auth/password/verify', { password })
+      this.crypto_key = await unlockCryptoKey(
+        password,
+        this.user.kek_salt,
+        this.user.encrypted_crypto_key
+      )
     },
-    async login(userData, accessToken, cryptoKey) {
+    login(userData, accessToken, cryptoKey) {
       this.isLoggingIn = true
       this.isAuthenticated = true
       this.user = userData

@@ -55,7 +55,7 @@ router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
 
   if (!authInitialized) {
-    await authStore.initAuth()
+    await authStore.initAuth(to.name)
     authInitialized = true
   }
 

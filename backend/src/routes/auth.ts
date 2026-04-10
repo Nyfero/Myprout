@@ -73,7 +73,7 @@ router.post('/register', async (req, res) => {
 
     res.status(201).json({
       message:
-        "Pour valider l'inscription', merci de confirmer votre adresse email grâce à l'email qui vous a été envoyé.",
+        "Pour valider l'inscription, merci de confirmer votre adresse email grâce à l'email qui vous a été envoyé.",
     })
   } catch (error) {
     res
@@ -130,7 +130,7 @@ router.post('/verify-email', async (req, res) => {
         select: { user_id: true },
       })
 
-      const ids = usersToDelete.map(u => u.user_id)
+      const ids = usersToDelete.map((u) => u.user_id)
 
       if (ids.length > 0) {
         await tx.tokens.deleteMany({ where: { user_id: { in: ids } } })
@@ -296,35 +296,36 @@ router.post('/login', async (req, res) => {
 
     const refreshToken = generateRandomToken()
 
-    await prisma.tokens.createMany({
-      data: [
-        {
+    await prisma.$transaction([
+      prisma.tokens.deleteMany({
+        where: {
           user_id: user.user_id,
-          token_hash: hashToken(accessToken),
-          type: 'access',
-          expires_at: new Date(Date.now() + 15 * 60 * 1000),
+          type: { in: ['access', 'refresh', 'password_reset'] },
         },
-        {
-          user_id: user.user_id,
-          token_hash: hashToken(refreshToken),
-          type: 'refresh',
-          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        },
-      ],
-    })
+      }),
+      prisma.tokens.createMany({
+        data: [
+          {
+            user_id: user.user_id,
+            token_hash: hashToken(accessToken),
+            type: 'access',
+            expires_at: new Date(Date.now() + 15 * 60 * 1000), // minutes | secondes | milisecondes
+          },
+          {
+            user_id: user.user_id,
+            token_hash: hashToken(refreshToken),
+            type: 'refresh',
+            expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // jours | heures | minutes | secondes | milisecondes
+          },
+        ],
+      }),
+    ])
 
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    })
-
-    res.cookie('hasSession', '1', {
-      httpOnly: false,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // jours | heures | minutes | secondes | milisecondes
     })
 
     res.json({
@@ -359,7 +360,6 @@ router.post('/logout', async (req, res) => {
   }
 
   res.clearCookie('refreshToken')
-  res.clearCookie('hasSession')
   res.json({ success: true })
 })
 
@@ -404,7 +404,7 @@ router.post('/refresh', async (req, res) => {
       where: { token_hash },
       data: {
         token_hash: newTokenHash,
-        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // jours | heures | minutes | secondes | milisecondes
       },
     })
 
@@ -418,7 +418,7 @@ router.post('/refresh', async (req, res) => {
         user_id: user.user_id,
         token_hash: hashToken(accessToken),
         type: 'access',
-        expires_at: new Date(Date.now() + 15 * 60 * 1000),
+        expires_at: new Date(Date.now() + 15 * 60 * 1000), // minutes | secondes | milisecondes
       },
     })
 
@@ -426,14 +426,7 @@ router.post('/refresh', async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    })
-
-    res.cookie('hasSession', '1', {
-      httpOnly: false,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // jours | heures | minutes | secondes | milisecondes
     })
 
     res.json({
@@ -638,7 +631,6 @@ router.put('/password/reset', async (req, res) => {
 // ─── GET SECURITY QUESTIONS ───────────────────────────────────────────────────
 router.get('/recovery', async (req, res) => {
   const { token } = req.query
-
   if (!token) return res.status(400).json({ error: 'Token manquant' })
 
   try {
