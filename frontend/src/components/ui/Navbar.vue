@@ -9,7 +9,7 @@
           </router-link>
         </div>
       </div>
-      <div v-if="auth.isAdmin" class="flex-1">
+      <div v-if="auth.getRole === 'Admin'" class="flex-1">
         <div class="icon-link-wrapper">
           <router-link to="/admin" class="icon-link" title="Administration">
             <span class="icon material-icons">admin_panel_settings</span>
@@ -18,7 +18,7 @@
         </div>
       </div>
       <div class="flex-1">
-        <div class="icon-link-wrapper">  
+        <div class="icon-link-wrapper">
           <router-link to="/profile" class="icon-link" title="Profil">
             <span class="icon material-icons">person</span>
             <span class="nav-label">Profil</span>
@@ -54,9 +54,9 @@
 </div>-->
 
 <script setup>
-  import { useAuthStore } from '@/stores/authStore'
+import { useAuthStore } from '@/stores/authStore'
 
-  const auth = useAuthStore()
+const auth = useAuthStore()
 </script>
 
 <style scoped>
@@ -93,7 +93,9 @@
 
 .icon-link .icon {
   font-size: 1.8rem;
-  transition: font-size 0.18s, color 0.2s;
+  transition:
+    font-size 0.18s,
+    color 0.2s;
   line-height: 1;
 }
 
@@ -102,7 +104,9 @@
   opacity: 0;
   max-height: 0;
   overflow: hidden;
-  transition: opacity 0.16s, max-height 0.16s;
+  transition:
+    opacity 0.16s,
+    max-height 0.16s;
   margin-top: 0.2em;
   color: #fff;
   white-space: nowrap;
@@ -143,7 +147,9 @@
   opacity: 0;
   max-height: 0;
   overflow: hidden;
-  transition: opacity 0.16s, max-height 0.16s;
+  transition:
+    opacity 0.16s,
+    max-height 0.16s;
   margin-top: 0.2em;
   color: #fff;
   white-space: nowrap;

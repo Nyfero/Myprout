@@ -6,7 +6,8 @@ async function main() {
   console.log('🗑️  Suppression de tous les utilisateurs...')
 
   await prisma.passwords.deleteMany()
-  await prisma.ipAddress.deleteMany()
+  await prisma.tokens.deleteMany()
+  // await prisma.ipAddress.deleteMany()
   await prisma.userRoles.deleteMany()
   await prisma.users.deleteMany()
 

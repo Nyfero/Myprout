@@ -1,4 +1,4 @@
-// middlewares/authMiddleware.ts
+// middlewares/authenticate.ts
 import { Request, Response, NextFunction } from 'express'
 import { verifyToken, hashToken } from '../utils/jwt'
 import prisma from '../prisma'
@@ -9,13 +9,13 @@ declare global {
       user?: {
         user_id: number
         email: string
-        isAdmin: boolean
+        role: string
       }
     }
   }
 }
 
-export const authMiddleware = async (
+export const authenticate = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -32,7 +32,7 @@ export const authMiddleware = async (
     const decoded = verifyToken(token) as {
       user_id: number
       email: string
-      isAdmin: boolean
+      role: string
     }
 
     if (!decoded) {

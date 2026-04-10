@@ -1,10 +1,11 @@
 // routes/passwords.ts
 import express from 'express'
 import prisma from '../prisma'
-import { authMiddleware } from '../middlewares/authMiddleware'
+import { authenticate } from '../middlewares/authenticate'
+import { limitDemoCount } from '../middlewares/requireRole'
 const router = express.Router()
 
-router.get('/', authMiddleware, async (req, res) => {
+router.get('/', authenticate, async (req, res) => {
   try {
     const passwords = await prisma.passwords.findMany({
       where: { user_id: req.user.user_id },
@@ -18,27 +19,32 @@ router.get('/', authMiddleware, async (req, res) => {
   }
 })
 
-router.post('/', authMiddleware, async (req, res) => {
-  const { title, username, password, note } = req.body
-  try {
-    const newPassword = await prisma.passwords.create({
-      data: {
-        title,
-        username,
-        password,
-        note,
-        user_id: req.user.user_id,
-      },
-    })
-    res.status(201).json(newPassword)
-  } catch (error) {
-    res
-      .status(400)
-      .json({ error: 'Erreur lors de la création du mot de passe' })
+router.post(
+  '/',
+  authenticate,
+  limitDemoCount('passwords', 10),
+  async (req, res) => {
+    const { title, username, password, note } = req.body
+    try {
+      const newPassword = await prisma.passwords.create({
+        data: {
+          title,
+          username,
+          password,
+          note,
+          user_id: req.user.user_id,
+        },
+      })
+      res.status(201).json(newPassword)
+    } catch (error) {
+      res
+        .status(400)
+        .json({ error: 'Erreur lors de la création du mot de passe' })
+    }
   }
-})
+)
 
-router.put('/:id', authMiddleware, async (req, res) => {
+router.put('/:id', authenticate, async (req, res) => {
   const { id } = req.params
   const { title, username, password, note } = req.body
   try {
@@ -52,7 +58,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
   }
 })
 
-router.delete('/:id', authMiddleware, async (req, res) => {
+router.delete('/:id', authenticate, async (req, res) => {
   const { id } = req.params
   try {
     await prisma.passwords.delete({
@@ -64,7 +70,7 @@ router.delete('/:id', authMiddleware, async (req, res) => {
   }
 })
 
-router.patch('/:id/is_stared', authMiddleware, async (req, res) => {
+router.patch('/:id/is_stared', authenticate, async (req, res) => {
   const { id } = req.params
   const { is_stared } = req.body
 

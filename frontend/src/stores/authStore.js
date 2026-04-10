@@ -12,8 +12,8 @@ export const useAuthStore = defineStore('auth', {
     isLoggingIn: false,
   }),
   getters: {
-    isAdmin: (state) => {
-      return state.user?.isAdmin
+    getRole: (state) => {
+      return state.user?.role
     },
     isLocked() {
       return this.isAuthenticated && !this.crypto_key

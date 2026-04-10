@@ -13,7 +13,8 @@ import {
   verifyToken,
   hashToken,
 } from '../utils/jwt'
-import { authMiddleware } from '../middlewares/authMiddleware'
+import { authenticate } from '../middlewares/authenticate'
+import { requireNotDemo } from '../middlewares/requireRole'
 import {
   deriveKek,
   encryptCryptoKey,
@@ -287,10 +288,11 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Email ou mot de passe incorrect' })
     }
 
-    const isAdmin = user.userRoles.some((ur) => ur.role.role === 'Admin')
+    const role = user.userRoles[0].role.role
+    console.log(role)
 
     const accessToken = generateToken(
-      { user_id: user.user_id, email: user.email, isAdmin },
+      { user_id: user.user_id, email: user.email, role },
       '15m'
     )
 
@@ -337,7 +339,7 @@ router.post('/login', async (req, res) => {
         lastName: user.lastName,
         kek_salt: user.kek_salt,
         encrypted_crypto_key: user.encrypted_crypto_key,
-        isAdmin,
+        role,
       },
     })
   } catch (error) {
@@ -391,7 +393,7 @@ router.post('/refresh', async (req, res) => {
     }
 
     const user = storedToken.user
-    const isAdmin = user.userRoles.some((ur) => ur.role.role === 'Admin')
+    const role = user.userRoles[0].role.role
 
     const newRefreshToken = generateRandomToken()
     const newTokenHash = hashToken(newRefreshToken)
@@ -409,7 +411,7 @@ router.post('/refresh', async (req, res) => {
     })
 
     const accessToken = generateToken(
-      { user_id: user.user_id, email: user.email, isAdmin },
+      { user_id: user.user_id, email: user.email, role },
       '15m'
     )
 
@@ -438,7 +440,7 @@ router.post('/refresh', async (req, res) => {
         lastName: user.lastName,
         kek_salt: user.kek_salt,
         encrypted_crypto_key: user.encrypted_crypto_key,
-        isAdmin,
+        role,
       },
     })
   } catch (error) {
@@ -447,7 +449,7 @@ router.post('/refresh', async (req, res) => {
 })
 
 // ─── CHANGE PASSWORD ──────────────────────────────────────────────────────────
-router.put('/password', authMiddleware, async (req, res) => {
+router.put('/password', authenticate, requireNotDemo, async (req, res) => {
   const { oldPassword, newPassword } = req.body
   const userId = req.user.user_id
 
@@ -503,7 +505,7 @@ router.put('/password', authMiddleware, async (req, res) => {
 })
 
 // ─── VERIFY PASSWORD ──────────────────────────────────────────────────────────
-router.post('/password/verify', authMiddleware, async (req, res) => {
+router.post('/password/verify', authenticate, async (req, res) => {
   const { password } = req.body
 
   if (!password) {
@@ -754,7 +756,7 @@ router.post('/recovery/verify', async (req, res) => {
 })
 
 // ─── DELETE ACCOUNT ───────────────────────────────────────────────────────────
-router.delete('/account', authMiddleware, async (req, res) => {
+router.delete('/account', authenticate, requireNotDemo, async (req, res) => {
   const { password } = req.body
   const userId = req.user.user_id
 
