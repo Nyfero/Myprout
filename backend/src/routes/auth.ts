@@ -13,6 +13,7 @@ import {
   verifyToken,
   hashToken,
 } from '../utils/jwt'
+import { randomUUID } from 'crypto'
 import { authenticate } from '../middlewares/authenticate'
 import { requireNotDemo } from '../middlewares/requireRole'
 import {
@@ -238,6 +239,60 @@ router.post('/activate', async (req, res) => {
     res
       .status(500)
       .json({ error: 'Erreur serveur lors de la définition du mot de passe' })
+  }
+})
+
+// ─── DEMO ACCOUNT ─────────────────────────────────────────────────────────────
+router.post('/demo', async (req, res) => {
+  try {
+    const demoPassword = 'Demo38!'
+    const shortId = randomUUID().slice(0, 8)
+    console.log(shortId)
+
+    const password_hash = await bcrypt.hash(demoPassword, 12)
+    const cryptoKey = generateCryptoKey()
+    const kek_salt = generateSalt()
+    const kek = await deriveKek(demoPassword, Buffer.from(kek_salt, 'hex'))
+    const encrypted_crypto_key = encryptCryptoKey(cryptoKey, kek)
+
+    // ── Création de l'utilisateur demo ──
+    const user = await prisma.users.create({
+      data: {
+        email: `demo_${shortId}@demo.com`,
+        firstName: 'Demo',
+        lastName: shortId,
+        password_hash,
+        encrypted_crypto_key,
+        kek_salt,
+        is_active: true,
+        is_email_verified: true,
+        userRoles: {
+          create: {
+            role: {
+              connect: {
+                role_id: 3,
+              },
+            },
+          },
+        },
+        // expires_at: new Date(Date.now() + 1000 * 60 * 60), // 1h
+      },
+    })
+
+    // ── Pré-remplir avec de faux mots de passe ──
+    // TODO : à faire dans un second temps
+
+    res.status(201).json({
+      message: 'Compte demo créé',
+      credentials: {
+        email: user.email,
+        password: demoPassword,
+      },
+    })
+  } catch (error) {
+    res
+      .status(500)
+      .json({ error: 'Erreur serveur lors de la création du compte demo' })
   }
 })
 

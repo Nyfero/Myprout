@@ -156,6 +156,18 @@ function goRecovery({ token, password }) {
   margin-top: 14px;
 }
 
+:deep(.forgot-password) {
+  font-size: 0.9em;
+  color: grey;
+  text-decoration: underline;
+  cursor: pointer;
+  margin-top: 0.2em;
+}
+
+:deep(.forgot-password:hover) {
+  color: #c25fff;
+}
+
 /* Slide vers la gauche (connexion -> inscription) */
 .slide-left-enter-active,
 .slide-left-leave-active {

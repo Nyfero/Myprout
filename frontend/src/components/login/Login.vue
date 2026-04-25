@@ -121,8 +121,8 @@
           <!-- Body -->
           <div class="login-body">
             <p>
-              Un email de réinitialisation va être envoyé dans quelques instants à
-              :
+              Un email de réinitialisation va être envoyé dans quelques instants
+              à :
             </p>
             <button v-if="mailboxUrl" class="themed-button button-primary">
               <a :href="mailboxUrl" target="_blank" class="email-link-btn">
@@ -227,7 +227,7 @@ async function onSubmit() {
       user.kek_salt,
       user.encrypted_crypto_key
     )
-    await authStore.login(user, token, crypto_key)
+    authStore.login(user, token, crypto_key)
     authStore.isLoggingIn = false
     await nextTick()
     await router.push({ name: 'Password' })
@@ -280,18 +280,6 @@ async function handleForgotPassword() {
   flex-direction: column;
   gap: 0.6em;
   margin-top: 1em;
-}
-
-.forgot-password {
-  font-size: 0.9em;
-  color: grey;
-  text-decoration: underline;
-  cursor: pointer;
-  margin-top: 0.2em;
-}
-
-.forgot-password:hover {
-  color: #c25fff;
 }
 
 .recovery-info {
