@@ -38,7 +38,7 @@ export async function sendRequestInscriptionToAdmin(user: any) {
   await sendEmail(adminEmail, title, html, template, templateVariables)
 }
 
-// WELCOME
+// EMAIL VERIFICATION
 export async function sendConfirmEmailToUser(user: any, token: string) {
   const confirmLink = `${process.env.FRONTEND_URL}/login?token=${token}&mode=email`
   let title = 'Confirmer votre mot de passe'
@@ -48,13 +48,13 @@ export async function sendConfirmEmailToUser(user: any, token: string) {
   let templateVariables = {}
 
   if (isProd) {
-    template = 'welcome-email-1'
+    template = 'email-validation'
     templateVariables = {
       firstName: user.firstName,
       confirmMailRoute: confirmLink,
     }
   } else {
-    html = await loadEmailTemplate('Welcome')
+    html = await loadEmailTemplate('EmailValidation')
 
     html = replaceVariables(html, {
       firstName: user.firstName,
@@ -104,14 +104,12 @@ export async function sendRejectedToUser(user: any) {
     template = 'account-rejected'
     templateVariables = {
       firstName: user.firstName,
-      contactURL: '',
     }
   } else {
     html = await loadEmailTemplate('Refuse')
 
     html = replaceVariables(html, {
       firstName: user.firstName,
-      contactURL: '',
     })
   }
 

@@ -6,7 +6,7 @@ const isProd = process.env.NODE_ENV === 'production'
 
 // ============ TRANSPORTERS ============
 
-const sender = 'myprout <noreply@myprout.fr>'
+const sender = 'Myprout <noreply@myprout.fr>'
 
 // Dev
 let transporter: nodemailer.Transporter

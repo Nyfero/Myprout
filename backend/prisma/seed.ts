@@ -1,6 +1,5 @@
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcrypt'
-import crypto from 'crypto'
 import {
   deriveKek,
   encryptCryptoKey,
@@ -36,22 +35,24 @@ async function main() {
   console.log('✅ Rôle créé :', adminRole)
 
   // 2. Utilisateur admin
-  const admin = await prisma.users.upsert({
-    where: { email },
-    update: {},
-    create: {
-      email,
-      firstName,
-      lastName,
-      password_hash,
-      is_active: true,
-      encrypted_crypto_key,
-      kek_salt,
-      userRoles: {
-        create: { role_id: adminRole.role_id },
+  const existingAdmin = await prisma.users.findFirst({ where: { email } })
+  const admin =
+    existingAdmin ??
+    (await prisma.users.create({
+      data: {
+        email,
+        firstName,
+        lastName,
+        password_hash,
+        is_active: true,
+        encrypted_crypto_key,
+        kek_salt,
+        is_email_verified: true,
+        userRoles: {
+          create: { role_id: adminRole.role_id },
+        },
       },
-    },
-  })
+    }))
   console.log('✅ Admin créé avec succès :', admin)
 }
 

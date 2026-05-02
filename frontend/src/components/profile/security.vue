@@ -38,9 +38,14 @@
           <p class="security-item-desc">Cette action est irréversible</p>
         </div>
       </div>
-      <button class="themed-button button-danger flex-1" @click="openModal">
+      <button
+        v-if="authStore.isAdmin === false"
+        class="themed-button button-danger flex-1"
+        @click="openModal"
+      >
         Supprimer
       </button>
+      <div v-else>Vous ne pouvez pas supprimer un compte admin.</div>
     </div>
   </div>
 
@@ -57,8 +62,10 @@
 import { ref } from 'vue'
 import { useProfile } from '@/components/profile/composables/useProfile'
 import deleteAccountModal from '@/components/modals/profile/deleteAccountModal.vue'
+import { useAuthStore } from '@/stores/authStore'
 
 const { deleteAccount, logout } = useProfile()
+const authStore = useAuthStore()
 
 const showDeleteAccountModal = ref(false)
 const formLoading = ref(false)

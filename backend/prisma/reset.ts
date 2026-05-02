@@ -5,9 +5,9 @@ const prisma = new PrismaClient()
 async function main() {
   console.log('🗑️  Suppression de tous les utilisateurs...')
 
-  await prisma.passwords.deleteMany()
-  await prisma.ipAddress.deleteMany()
+  await prisma.tokens.deleteMany()
   await prisma.userRoles.deleteMany()
+  await prisma.passwords.deleteMany()
   await prisma.users.deleteMany()
 
   console.log('✅ Tous les utilisateurs supprimés.')

@@ -61,7 +61,9 @@
             line-height: 24px;
           "
         >
-          <strong>Votre compte a été validé par l'administrateur !</strong>
+          <strong style="color: #c25fff"
+            >Votre compte a été validé par l'administrateur !</strong
+          >
           <br />
           Vous pouvez maintenant terminer la création de votre compte.<br />
           <br />
@@ -79,7 +81,19 @@
           "
         >
           Cliquez sur le bouton ci-dessous pour accéder à votre page de
-          configuration. Ce lien est<strong> valide 7 jours </strong>.
+          configuration.
+        </p>
+
+        <p
+          style="
+            font-size: 16px;
+            color: #d1d5db;
+            margin: 0 0 24px 0;
+            text-align: center;
+            line-height: 24px;
+          "
+        >
+          Ce lien est<strong style="color: #c25fff"> valide 7 jours </strong>.
         </p>
 
         <!-- Bouton CTA -->
@@ -102,6 +116,27 @@
           </a>
         </div>
 
+        <!-- Alternative lien -->
+        <p
+          style="
+            font-size: 14px;
+            color: #9ca3af;
+            text-align: center;
+            margin: 0 0 24px 0;
+          "
+        >
+          Ou copiez ce lien : <br />
+          <span
+            style="
+              word-break: break-all;
+              font-family: monospace;
+              color: #c25fff;
+            "
+          >
+            {{setupLinkURL}}
+          </span>
+        </p>
+
         <hr
           style="margin: 24px 0; border: none; border-top: 1px solid #c25fff"
         />
@@ -110,12 +145,17 @@
           style="
             font-size: 14px;
             color: #9ca3af;
-            margin: 0 0 16px 0;
-            line-height: 20px;
+            margin: 0 0 12px 0;
             text-align: center;
           "
         >
-          Notre équipe de support reste disponible si besoin.
+          Des questions ?
+          <a
+            href="mailto:contact@myprout.fr?subject=Question%20myprout%20:%20Compte%20validé"
+            style="color: #c25fff; text-decoration: none; font-weight: 600"
+          >
+            Contactez-nous
+          </a>
         </p>
       </div>
     </div>
