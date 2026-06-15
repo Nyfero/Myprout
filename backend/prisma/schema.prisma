@@ -24,7 +24,7 @@ model users {
     // User data
   firstName             String    @default("")
   lastName              String    @default("")
-  email                 String    @default("")
+  email                 String    @unique @default("")
   password_hash         String?
     // User activation
   is_active             Boolean   @default(false)
@@ -39,8 +39,6 @@ model users {
   recovery_questions              Json?
   recovery_encrypted_crypto_key   String?
 
-    // Apply unique to email if email is verified
-  @@index([email, is_email_verified])
 }
 
 model tokens {

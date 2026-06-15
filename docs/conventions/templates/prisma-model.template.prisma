@@ -1,0 +1,36 @@
+// TEMPLATE — Modèle Prisma (à recopier dans backend/prisma/schema.prisma)
+// Voir CONVENTIONS.md §2 (langue) et §7 (pas de code mort).
+//
+// Conventions du projet (telles qu'utilisées aujourd'hui) :
+//  - nom de modèle : minuscule pluriel (users, tokens, passwords)
+//  - clé primaire : <singulier>_id  (user_id, token_id…)
+//  - colonnes : snake_case  (created_at, is_active, kek_salt)
+//
+//  ⚠️ INCOHÉRENCE À CORRIGER : firstName / lastName sont en camelCase alors que
+//  tout le reste est en snake_case. Choisir UNE convention (snake_case recommandé
+//  pour rester homogène avec user_id/is_active) et migrer. Voir A_REFORMATER.md.
+//
+//  - aligner les attributs verticalement (déjà le cas)
+//  - regrouper les colonnes par thème avec un commentaire d'une ligne, BIEN indenté
+//    (les `// Link to other tables` du schéma actuel sont sur-indentés)
+//  - supprimer les modèles commentés (ex. ipAddress) : l'historique Git suffit
+
+model resources {
+  resource_id  Int       @id @default(autoincrement())
+
+  // Relations
+  user_id      Int
+  user         users     @relation(fields: [user_id], references: [user_id])
+
+  // Données
+  title        String?
+  note         String?   @db.Text
+
+  // Statut
+  is_active    Boolean   @default(false)
+
+  // Horodatage
+  created_at   DateTime  @default(now())
+  updated_at   DateTime? @updatedAt
+}
+</content>

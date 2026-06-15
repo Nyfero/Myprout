@@ -29,6 +29,10 @@ coverage
 
 *.tsbuildinfo
 
+# Code helper
+.claude/*
+_bmad/*
+
 # Keep environment variables out of version control
 .env
 

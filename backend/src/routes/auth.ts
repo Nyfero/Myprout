@@ -33,14 +33,11 @@ router.post('/register', async (req, res) => {
   }
 
   try {
-    const existingVerifiedUser = await prisma.users.findFirst({
-      where: {
-        email,
-        is_email_verified: true,
-      },
+    const existingUser = await prisma.users.findUnique({
+      where: { email },
     })
 
-    if (existingVerifiedUser) {
+    if (existingUser) {
       return res.status(409).json({ error: 'Cet email est déjà utilisé' })
     }
 
@@ -120,22 +117,6 @@ router.post('/verify-email', async (req, res) => {
       await tx.tokens.delete({
         where: { token_id: tokenRecord.token_id },
       })
-
-      const usersToDelete = await tx.users.findMany({
-        where: {
-          email: user.email,
-          is_email_verified: false,
-          user_id: { not: user.user_id },
-        },
-        select: { user_id: true },
-      })
-
-      const ids = usersToDelete.map((u) => u.user_id)
-
-      if (ids.length > 0) {
-        await tx.tokens.deleteMany({ where: { user_id: { in: ids } } })
-        await tx.users.deleteMany({ where: { user_id: { in: ids } } })
-      }
     })
 
     await sendRequestInscriptionToAdmin(user)
