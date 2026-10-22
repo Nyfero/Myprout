@@ -26,15 +26,23 @@ async function main() {
   const kek = await deriveKek(password, Buffer.from(kek_salt, 'hex'))
   const encrypted_crypto_key = encryptCryptoKey(cryptoKey, kek)
 
-  // 1. Rôle ADMIN
+  // 1. Rôle Admin
   const adminRole = await prisma.roles.upsert({
     where: { role_id: 1 },
     update: {},
-    create: { role: 'ADMIN' },
+    create: { role: 'Admin' },
   })
   console.log('✅ Rôle créé :', adminRole)
 
-  // 2. Utilisateur admin
+  // 2. Rôle User
+  const userRole = await prisma.roles.upsert({
+    where: { role_id: 2 },
+    update: {},
+    create: { role: 'User' },
+  })
+  console.log('✅ Rôle créé :', userRole)
+
+  // 3. Utilisateur admin
   const existingAdmin = await prisma.users.findFirst({ where: { email } })
   const admin =
     existingAdmin ??
